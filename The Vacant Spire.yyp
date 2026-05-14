@@ -4,6 +4,7 @@
   "name": "The Vacant Spire",
   "resources": [
     {"id":{"name":"spr_testBranchRiley","path":"sprites/spr_testBranchRiley/spr_testBranchRiley.yy",},"order":0,},
+    {"id":{"name":"spr_maintest","path":"sprites/spr_maintest/spr_maintest.yy",},"order":0,},
     {"id":{"name":"Room1","path":"rooms/Room1/Room1.yy",},"order":0,},
   ],
   "Options": [
