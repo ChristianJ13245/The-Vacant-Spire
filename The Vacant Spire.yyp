@@ -4,6 +4,7 @@
   "name": "The Vacant Spire",
   "resources": [
     {"id":{"name":"spr_testbrandon","path":"sprites/spr_testbrandon/spr_testbrandon.yy",},"order":0,},
+    {"id":{"name":"spr_testtwo","path":"scripts/spr_testtwo/spr_testtwo.yy",},"order":1,},
     {"id":{"name":"Room1","path":"rooms/Room1/Room1.yy",},"order":0,},
   ],
   "Options": [
