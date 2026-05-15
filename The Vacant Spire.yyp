@@ -3,6 +3,7 @@
   "resourceVersion": "1.6",
   "name": "The Vacant Spire",
   "resources": [
+    {"id":{"name":"obj_testObject","path":"objects/obj_testObject/obj_testObject.yy",},"order":0,},
     {"id":{"name":"spr_testBranchRiley","path":"sprites/spr_testBranchRiley/spr_testBranchRiley.yy",},"order":0,},
     {"id":{"name":"obj_testchristian","path":"objects/obj_testchristian/obj_testchristian.yy",},"order":0,},
     {"id":{"name":"spr_maintest","path":"sprites/spr_maintest/spr_maintest.yy",},"order":0,},
