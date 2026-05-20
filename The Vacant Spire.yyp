@@ -7,6 +7,7 @@
     {"id":{"name":"spr_testBranchRiley","path":"sprites/spr_testBranchRiley/spr_testBranchRiley.yy",},"order":0,},
     {"id":{"name":"obj_testchristian","path":"objects/obj_testchristian/obj_testchristian.yy",},"order":0,},
     {"id":{"name":"spr_maintest","path":"sprites/spr_maintest/spr_maintest.yy",},"order":0,},
+    {"id":{"name":"spr_wind","path":"sprites/spr_wind/spr_wind.yy",},"order":4,},
     {"id":{"name":"Room1","path":"rooms/Room1/Room1.yy",},"order":0,},
   ],
   "Options": [
