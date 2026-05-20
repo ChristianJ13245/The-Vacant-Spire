@@ -3,10 +3,12 @@
   "resourceVersion": "1.6",
   "name": "The Vacant Spire",
   "resources": [
+    {"id":{"name":"spr_goblin_idle","path":"sprites/spr_goblin_idle/spr_goblin_idle.yy",},"order":2,},
     {"id":{"name":"obj_testObject","path":"objects/obj_testObject/obj_testObject.yy",},"order":0,},
+    {"id":{"name":"spr_goblin","path":"sprites/spr_goblin/spr_goblin.yy",},"order":1,},
     {"id":{"name":"spr_testBranchRiley","path":"sprites/spr_testBranchRiley/spr_testBranchRiley.yy",},"order":0,},
     {"id":{"name":"obj_testchristian","path":"objects/obj_testchristian/obj_testchristian.yy",},"order":0,},
-    {"id":{"name":"spr_maintest","path":"sprites/spr_maintest/spr_maintest.yy",},"order":0,},
+    {"id":{"name":"spr_fireball","path":"sprites/spr_fireball/spr_fireball.yy",},"order":0,},
     {"id":{"name":"Room1","path":"rooms/Room1/Room1.yy",},"order":0,},
   ],
   "Options": [
