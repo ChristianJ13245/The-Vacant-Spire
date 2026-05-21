@@ -73,11 +73,7 @@ function ui_draw_battle_hud()
 
     // small info block on the left for now
     draw_text(_margin, _topY, "Floor: " + string(global.currentFloor));
-	draw_text(_margin, _topY + 28, "Arrows: power > element > lane");
-    draw_text(_margin, _topY + 56, global.debugText);
-	
-	// shows current spell as the player builds it
-	draw_text(_margin, _topY + 84, "Spell: " + string(global.inputText));
+    draw_text(_margin, _topY + 28, global.debugText);
 
     // player health bar
     if (instance_exists(global.player))
@@ -96,6 +92,74 @@ function ui_draw_battle_hud()
             ui_draw_health_bar(_enemyBarX, _barY, _barW, _barH, global.enemy.currentHealth, global.enemy.maxHealth, "Enemy", true);
         }
     }
+
+    ui_draw_input_arrows();
+}
+
+function ui_draw_input_arrows()
+{
+    var _guiW = display_get_gui_width();
+    var _guiH = display_get_gui_height();
+
+    var _centerX = _guiW * 0.5;
+    var _arrowY = _guiH - 118;
+    var _labelY = _arrowY + 42;
+    var _valueY = _arrowY + 68;
+
+    var _spacing = 96;
+    var _scale = 3;
+
+    var _slotX0 = _centerX - _spacing;
+    var _slotX1 = _centerX;
+    var _slotX2 = _centerX + _spacing;
+
+    draw_set_halign(fa_center);
+    draw_set_valign(fa_middle);
+
+    ui_draw_input_arrow_slot(_slotX0, _arrowY, _labelY, _valueY, 0, "Power", _scale);
+    ui_draw_input_arrow_slot(_slotX1, _arrowY, _labelY, _valueY, 1, "Element", _scale);
+    ui_draw_input_arrow_slot(_slotX2, _arrowY, _labelY, _valueY, 2, "Lane", _scale);
+
+    draw_set_halign(fa_left);
+    draw_set_valign(fa_top);
+    draw_set_alpha(1);
+}
+
+function ui_draw_input_arrow_slot(_x, _arrowY, _labelY, _valueY, _slot, _label, _scale)
+{
+    var _arrowInput = global.inputVisualArrows[_slot];
+    var _valueText = global.inputVisualText[_slot];
+
+    draw_set_alpha(0.35);
+
+    if (_arrowInput != -1)
+    {
+        draw_set_alpha(1);
+
+        var _spr = ui_get_arrow_sprite(_arrowInput);
+        draw_sprite_ext(_spr, 0, _x, _arrowY, _scale, _scale, 0, c_white, 1);
+    }
+
+    draw_set_alpha(1);
+    draw_set_colour(c_white);
+
+    draw_text(_x, _labelY, _label);
+    draw_text(_x, _valueY, _valueText);
+}
+
+function ui_get_arrow_sprite(_input)
+{
+    if (_input == 0)
+    {
+        return spr_arrow_down;
+    }
+
+    if (_input == 1)
+    {
+        return spr_arrow_right;
+    }
+
+    return spr_arrow_up;
 }
 
 function ui_draw_pause_menu()

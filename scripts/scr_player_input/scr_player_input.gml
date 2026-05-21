@@ -12,6 +12,30 @@ function player_input_create()
     // clears combo if player waits too long
     inputResetTime = room_speed * 3;
 
+    // cooldown after casting so player cant spam spells
+    // same as enemy cooldown
+    playerCastCooldownTime = room_speed * 3;
+    playerCastCooldownTimer = 0;
+
+    // input feedback for the bottom arrows
+    inputVisualTime = 24;
+    inputVisualTimer = [0, 0, 0];
+
+    // wait after casting so we dont insta clear arrows
+    inputVisualClearTimer = 0;
+    inputVisualClearDelay = room_speed * 0.5;
+
+    // quick lookups so we dont need huge if chains everywhere
+    spellPowerValues = [SpellPower.QUICK, SpellPower.MEDIUM, SpellPower.STRONG];
+    spellElementValues = [SpellElement.FIRE, SpellElement.WATER, SpellElement.AIR];
+    spellLaneValues = [SpellLane.LOW, SpellLane.MIDDLE, SpellLane.HIGH];
+
+    spellPowerText = ["Quick", "Medium", "Strong"];
+    spellElementText = ["Fire", "Water", "Air"];
+    spellLaneText = ["Low", "Middle", "High"];
+
+    global.inputVisualArrows = [-1, -1, -1];
+    global.inputVisualText = ["_", "_", "_"];
     global.inputText = "";
 }
 
@@ -24,9 +48,42 @@ function player_input_step()
 
     inputTimer += 1;
 
+    // tick down spell cooldown
+    if (playerCastCooldownTimer > 0)
+    {
+        playerCastCooldownTimer -= 1;
+    }
+
+    // clears the bottom arrow UI after casting
+    if (inputVisualClearTimer > 0)
+    {
+        inputVisualClearTimer -= 1;
+
+        if (inputVisualClearTimer <= 0)
+        {
+            player_input_clear_visuals();
+        }
+    }
+
+    // tick down the arrow timers
+    for (var i = 0; i < 3; i += 1)
+    {
+        if (inputVisualTimer[i] > 0)
+        {
+            inputVisualTimer[i] -= 1;
+        }
+    }
+
     if (inputCount > 0 && inputTimer > inputResetTime)
     {
         player_input_clear();
+        player_input_clear_visuals();
+    }
+
+    // dont accept new spell inputs while cooling down
+    if (playerCastCooldownTimer > 0)
+    {
+        return;
     }
 
     // input 1 = power, input 2 = element, input 3 = lane
@@ -52,11 +109,35 @@ function player_input_step()
 
 function player_input_add(_input)
 {
+    inputVisualClearTimer = 0;
+
+    var _slot = inputCount;
+
     inputSequence[inputCount] = _input;
     inputCount += 1;
     inputTimer = 0;
 
-	global.inputText = player_input_sequence_to_text();
+    // store the pressed arrow for the bottom UI
+    if (_slot >= 0 && _slot < 3)
+    {
+        global.inputVisualArrows[_slot] = _input;
+        inputVisualTimer[_slot] = inputVisualTime;
+
+        if (_slot == 0)
+        {
+            global.inputVisualText[_slot] = player_input_strength_text(_input);
+        }
+        else if (_slot == 1)
+        {
+            global.inputVisualText[_slot] = player_input_element_text(_input);
+        }
+        else
+        {
+            global.inputVisualText[_slot] = player_input_lane_text(_input);
+        }
+    }
+
+    global.inputText = player_input_sequence_to_text();
 
     if (inputCount >= 3)
     {
@@ -73,10 +154,24 @@ function player_input_clear()
     global.inputText = "";
 }
 
+function player_input_clear_visuals()
+{
+    global.inputVisualArrows = [-1, -1, -1];
+    global.inputVisualText = ["_", "_", "_"];
+    inputVisualTimer = [0, 0, 0];
+}
+
 function player_input_try_cast()
 {
     if (inputCount < 3)
     {
+        return;
+    }
+
+    if (playerCastCooldownTimer > 0)
+    {
+        player_input_clear();
+        player_input_clear_visuals();
         return;
     }
 
@@ -86,7 +181,14 @@ function player_input_try_cast()
 
     global.debugText = "Player cast " + spell_info_to_text(_spellInfo);
 
+    // start cooldown after casting
+    playerCastCooldownTimer = playerCastCooldownTime;
+
+    // clear combo straight away
     player_input_clear();
+
+    // keep the arrows visible for half a second
+    inputVisualClearTimer = inputVisualClearDelay;
 }
 
 function player_input_to_spell_info()
@@ -95,51 +197,9 @@ function player_input_to_spell_info()
     var _elementInput = inputSequence[1];
     var _laneInput = inputSequence[2];
 
-    var _spellPower = SpellPower.QUICK;
-    var _spellElement = SpellElement.FIRE;
-    var _spellLane = SpellLane.LOW;
-
-    // first input picks strength
-    if (_powerInput == 0)
-    {
-        _spellPower = SpellPower.QUICK;
-    }
-    else if (_powerInput == 1)
-    {
-        _spellPower = SpellPower.MEDIUM;
-    }
-    else
-    {
-        _spellPower = SpellPower.STRONG;
-    }
-
-    // second input picks element
-    if (_elementInput == 0)
-    {
-        _spellElement = SpellElement.FIRE;
-    }
-    else if (_elementInput == 1)
-    {
-        _spellElement = SpellElement.WATER;
-    }
-    else
-    {
-        _spellElement = SpellElement.AIR;
-    }
-
-    // third input picks lane
-    if (_laneInput == 0)
-    {
-        _spellLane = SpellLane.LOW;
-    }
-    else if (_laneInput == 1)
-    {
-        _spellLane = SpellLane.MIDDLE;
-    }
-    else
-    {
-        _spellLane = SpellLane.HIGH;
-    }
+    var _spellPower = spellPowerValues[_powerInput];
+    var _spellElement = spellElementValues[_elementInput];
+    var _spellLane = spellLaneValues[_laneInput];
 
     return new SpellData(_spellPower, _spellElement, _spellLane);
 }
@@ -187,45 +247,15 @@ function player_input_sequence_to_text()
 
 function player_input_strength_text(_input)
 {
-    if (_input == 0)
-    {
-        return "Quick";
-    }
-
-    if (_input == 1)
-    {
-        return "Medium";
-    }
-
-    return "Strong";
+    return spellPowerText[_input];
 }
 
 function player_input_element_text(_input)
 {
-    if (_input == 0)
-    {
-        return "Fire";
-    }
-
-    if (_input == 1)
-    {
-        return "Water";
-    }
-
-    return "Air";
+    return spellElementText[_input];
 }
 
 function player_input_lane_text(_input)
 {
-    if (_input == 0)
-    {
-        return "Low";
-    }
-
-    if (_input == 1)
-    {
-        return "Middle";
-    }
-
-    return "High";
+    return spellLaneText[_input];
 }
