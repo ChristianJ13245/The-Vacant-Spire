@@ -230,8 +230,8 @@ function game_draw_lanes()
     var _cfg = global.config;
 
     // small side padding
-    var _leftX = 80;
-    var _rightX = room_width - 80;
+    var _leftX = 200;
+    var _rightX = room_width - 200;
 
     draw_set_alpha(0.35);
     draw_set_colour(c_white);

@@ -23,6 +23,7 @@
     {"id":{"name":"rm_batle_room","path":"rooms/rm_batle_room/rm_batle_room.yy",},"order":0,},
     {"id":{"name":"spr_goblin_idle","path":"sprites/spr_goblin_idle/spr_goblin_idle.yy",},"order":1,},
     {"id":{"name":"spr_goblin","path":"sprites/spr_goblin/spr_goblin.yy",},"order":0,},
+    {"id":{"name":"spr_background","path":"sprites/spr_background/spr_background.yy",},"order":9,},
     {"id":{"name":"spr_aunt_rose_cast_low","path":"sprites/spr_aunt_rose_cast_low/spr_aunt_rose_cast_low.yy",},"order":0,},
     {"id":{"name":"spr_spell_air","path":"sprites/spr_spell_air/spr_spell_air.yy",},"order":1,},
     {"id":{"name":"spr_arrow_right","path":"sprites/spr_arrow_right/spr_arrow_right.yy",},"order":1,},
