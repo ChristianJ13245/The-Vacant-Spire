@@ -67,30 +67,74 @@ function SpellData(_spellPower, _spellElement, _spellLane) constructor
     spellElement = _spellElement;
     spellLane = _spellLane;
 
-    speed = 0;
-    damage = 0;
-    radius = 0;
+    // number version of the power
+    // makes clash maths easier, quick = 1, medium = 2, strong = 3
+    powerValue = spell_power_to_value(spellPower);
 
-    // quick = fast but weaker
-    // strong = slow but hits harder
-    switch (spellPower)
+    var _stats = spell_get_stats_from_power_value(powerValue);
+
+    speed = _stats.speed;
+    damage = _stats.damage;
+    radius = _stats.radius;
+}
+
+// turns spell enum into a simple number for clash maths
+function spell_power_to_value(_spellPower)
+{
+    switch (_spellPower)
     {
         case SpellPower.QUICK:
-            speed = 10;
-            damage = 8;
-            radius = 10;
-        break;
+            return 1;
 
         case SpellPower.MEDIUM:
-            speed = 7;
-            damage = 14;
-            radius = 15;
-        break;
+            return 2;
 
         case SpellPower.STRONG:
-            speed = 4;
-            damage = 24;
-            radius = 22;
-        break;
+            return 3;
     }
+
+    return 1;
+}
+
+// turns a number back into the spell power enum
+// useful when a strong spell gets reduced after a clash
+function spell_value_to_power(_value)
+{
+    if (_value <= 1)
+    {
+        return SpellPower.QUICK;
+    }
+
+    if (_value == 2)
+    {
+        return SpellPower.MEDIUM;
+    }
+
+    return SpellPower.STRONG;
+}
+
+// keeps speed, damage and size tied to current power
+// this lets reduced spells still behave correctly
+function spell_get_stats_from_power_value(_powerValue)
+{
+    var _stats = {
+        speed: 10,
+        damage: 8,
+        radius: 10
+    };
+
+    if (_powerValue == 2)
+    {
+        _stats.speed = 7;
+        _stats.damage = 14;
+        _stats.radius = 15;
+    }
+    else if (_powerValue >= 3)
+    {
+        _stats.speed = 4;
+        _stats.damage = 24;
+        _stats.radius = 22;
+    }
+
+    return _stats;
 }

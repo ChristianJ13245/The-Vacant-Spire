@@ -14,6 +14,9 @@ function game_create()
     // Simple debug line
     // see what the game controller is doing
     global.debugText = "Game ready";
+	
+	// shows the current arrow key input on the HUD
+	global.inputText = "";
 }
 
 function game_step()

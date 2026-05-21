@@ -73,8 +73,11 @@ function ui_draw_battle_hud()
 
     // small info block on the left for now
     draw_text(_margin, _topY, "Floor: " + string(global.currentFloor));
-    draw_text(_margin, _topY + 28, "ESC: Pause");
+	draw_text(_margin, _topY + 28, "Arrows: power > element > lane");
     draw_text(_margin, _topY + 56, global.debugText);
+	
+	// shows current spell as the player builds it
+	draw_text(_margin, _topY + 84, "Spell: " + string(global.inputText));
 
     // player health bar
     if (instance_exists(global.player))

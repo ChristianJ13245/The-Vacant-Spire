@@ -1,19 +1,70 @@
-// This script is only a shell for now
-// adding early so future commits have somewhere to build from
+// script to handle all of our spell logic
 
 function spell_create()
 {
-    // who created spell
+	// who created the spell
     owner = noone;
 
-    // this will eventually hold a SpellData struct, 
+    // SpellData struct
     data = undefined;
+
+    spellPower = SpellPower.QUICK;
+    spellElement = SpellElement.FIRE;
+    spellLane = SpellLane.MIDDLE;
+
+    powerValue = 1;
 
     // 1 means move right, -1 means move left
     moveDirection = 0;
 
+    moveSpeed = 0;
+    damage = 0;
+    radius = 10;
+
     // Spells should not do ANYTHING until properly spawned
     isInitialized = false;
+	
+	// animation
+    image_index = 0;
+    image_speed = 1;
+
+    // sprites
+    sprFire = asset_get_index("spr_spell_fire");
+    sprWater = asset_get_index("spr_spell_water");
+    sprAir = asset_get_index("spr_spell_air");
+}
+
+function spell_spawn(_owner, _spellInfo, _x, _y, _direction)
+{
+    var _spell = instance_create_layer(_x, _y, global.config.instanceLayer, obj_spell);
+
+    with (_spell)
+    {
+        owner = _owner;
+        data = _spellInfo;
+
+        spellPower = _spellInfo.spellPower;
+        spellElement = _spellInfo.spellElement;
+        spellLane = _spellInfo.spellLane;
+
+        powerValue = _spellInfo.powerValue;
+
+        moveDirection = _direction;
+
+        x = _x;
+        y = spell_get_lane_y(spellLane);
+
+        // pick the right spell sprite
+        sprite_index = spell_get_sprite();
+        image_index = 0;
+        image_speed = 0.35;
+
+        spell_refresh_stats_from_power(id);
+
+        isInitialized = true;
+    }
+
+    return _spell;
 }
 
 function spell_step()
@@ -30,19 +81,417 @@ function spell_step()
         return;
     }
 
-    // Spell movement will be added soon 
+    x += moveSpeed * moveDirection;
+
+    spell_check_spell_collision();
+
+    if (instance_exists(id))
+    {
+        spell_check_wizard_hit();
+    }
+
+    if (instance_exists(id))
+    {
+        if (x < -80 || x > room_width + 80)
+        {
+            instance_destroy();
+        }
+    }
 }
 
 function spell_draw()
 {
-    // Dont draw inactive spells
+    // dont draw inactive spells
     if (!isInitialized)
     {
         return;
     }
 
-    // Temporary spell draw for testing
-    // this will be sprites when artists are done
-    draw_set_colour(c_white);
-    draw_circle(x, y, 8, false);
+    var _spr = spell_get_sprite();
+
+    if (_spr != -1)
+    {
+        var _scale = 1;
+		
+        if (powerValue == 2)
+        {
+            _scale = 1.25;
+        }
+        else if (powerValue >= 3)
+        {
+            _scale = 1.5;
+        }
+
+        // flips enemy spells after the final scale is chosen
+        var _xScale = _scale * moveDirection;
+
+        draw_sprite_ext(_spr, image_index, x, y, _xScale, _scale, 0, c_white, 1);
+    }
+    else
+    {
+        draw_set_colour(spell_get_colour());
+        draw_circle(x, y, radius, false);
+    }
+}
+
+function spell_get_sprite()
+{
+    if (spellElement == SpellElement.FIRE)
+    {
+        return sprFire;
+    }
+
+    if (spellElement == SpellElement.WATER)
+    {
+        return sprWater;
+    }
+
+    return sprAir;
+}
+
+function spell_get_colour()
+{
+    if (spellElement == SpellElement.FIRE)
+    {
+        return make_colour_rgb(255, 90, 30);
+    }
+
+    if (spellElement == SpellElement.WATER)
+    {
+        return make_colour_rgb(60, 150, 255);
+    }
+
+    return make_colour_rgb(220, 240, 255);
+}
+
+function spell_get_lane_y(_lane)
+{
+    if (_lane == SpellLane.LOW)
+    {
+        return global.config.laneLowY;
+    }
+
+    if (_lane == SpellLane.MIDDLE)
+    {
+        return global.config.laneMiddleY;
+    }
+
+    return global.config.laneHighY;
+}
+
+function spell_check_wizard_hit()
+{
+    if (!instance_exists(owner))
+    {
+        instance_destroy();
+        return;
+    }
+
+    var _target = noone;
+
+    if (owner == global.player)
+    {
+        _target = global.enemy;
+    }
+    else
+    {
+        _target = global.player;
+    }
+
+    if (!instance_exists(_target))
+    {
+        return;
+    }
+
+    // quick prototype hit check
+	// lanes are for spell clashes, not wizard hitboxes
+    var _hitWizard = false;
+
+    if (moveDirection > 0 && x >= _target.x - 36)
+    {
+        _hitWizard = true;
+    }
+    else if (moveDirection < 0 && x <= _target.x + 36)
+    {
+        _hitWizard = true;
+    }
+
+    if (_hitWizard)
+    {
+        if (_target == global.player)
+        {
+            with (_target)
+            {
+                player_take_damage(other.damage);
+            }
+        }
+        else
+        {
+            with (_target)
+            {
+                enemy_take_damage(other.damage);
+            }
+        }
+
+        instance_destroy();
+    }
+}
+
+function spell_check_spell_collision()
+{
+    var _self = id;
+
+    with (obj_spell)
+    {
+        if (id == _self)
+        {
+            continue;
+        }
+
+        if (!instance_exists(_self))
+        {
+            continue;
+        }
+
+        if (!isInitialized || !_self.isInitialized)
+        {
+            continue;
+        }
+
+        if (owner == _self.owner)
+        {
+            continue;
+        }
+
+        if (spellLane != _self.spellLane)
+        {
+            continue;
+        }
+
+        if (abs(x - _self.x) > radius + _self.radius)
+        {
+            continue;
+        }
+
+        var _result = spell_resolve_collision(_self, id);
+
+        if (_result == 0)
+        {
+            // both spells cancel
+            with (_self)
+            {
+                instance_destroy();
+            }
+
+            instance_destroy();
+        }
+        else if (_result == 1)
+        {
+            // first spell wins, this spell loses
+            instance_destroy();
+        }
+        else if (_result == 2)
+        {
+            // this spell wins, first spell loses
+            with (_self)
+            {
+                instance_destroy();
+            }
+        }
+
+        break;
+    }
+}
+
+function spell_resolve_collision(_spellA, _spellB)
+{
+    if (!instance_exists(_spellA) || !instance_exists(_spellB))
+    {
+        return -1;
+    }
+
+    if (_spellA.spellLane != _spellB.spellLane)
+    {
+        return -1;
+    }
+
+    var _powerA = _spellA.powerValue;
+    var _powerB = _spellB.powerValue;
+
+    var _elementA = _spellA.spellElement;
+    var _elementB = _spellB.spellElement;
+
+    // same power and same element means both disappear
+    if (_powerA == _powerB && _elementA == _elementB)
+    {
+        global.debugText = "Spells cancelled";
+        return 0;
+    }
+
+    // same power means element decides
+    if (_powerA == _powerB)
+    {
+        var _elementResult = spell_compare_elements(_elementA, _elementB);
+
+        if (_elementResult == 1)
+        {
+            global.debugText = "Element clash won";
+            return 1;
+        }
+
+        if (_elementResult == -1)
+        {
+            global.debugText = "Element clash won";
+            return 2;
+        }
+
+        return 0;
+    }
+
+    // different power but same element means stronger spell wins cleanly
+    if (_elementA == _elementB)
+    {
+        if (_powerA > _powerB)
+        {
+            global.debugText = "Power clash won";
+            return 1;
+        }
+
+        global.debugText = "Power clash won";
+        return 2;
+    }
+
+    // different power and different element means stronger wins but loses power
+    if (_powerA > _powerB)
+    {
+        spell_reduce_power_after_clash(_spellA, _powerB);
+        global.debugText = "Spell power reduced";
+        return 1;
+    }
+
+    spell_reduce_power_after_clash(_spellB, _powerA);
+    global.debugText = "Spell power reduced";
+    return 2;
+}
+
+function spell_compare_elements(_elementA, _elementB)
+{
+    if (_elementA == _elementB)
+    {
+        return 0;
+    }
+
+    // fire beats air
+    if (_elementA == SpellElement.FIRE && _elementB == SpellElement.AIR)
+    {
+        return 1;
+    }
+
+    // air beats water
+    if (_elementA == SpellElement.AIR && _elementB == SpellElement.WATER)
+    {
+        return 1;
+    }
+
+    // water beats fire
+    if (_elementA == SpellElement.WATER && _elementB == SpellElement.FIRE)
+    {
+        return 1;
+    }
+
+    return -1;
+}
+
+function spell_reduce_power_after_clash(_spell, _amount)
+{
+    if (!instance_exists(_spell))
+    {
+        return;
+    }
+
+    with (_spell)
+    {
+        powerValue -= _amount;
+
+        if (powerValue <= 0)
+        {
+            instance_destroy();
+        }
+        else
+        {
+            spellPower = spell_value_to_power(powerValue);
+            spell_refresh_stats_from_power(id);
+        }
+    }
+}
+
+function spell_refresh_stats_from_power(_spell)
+{
+    if (!instance_exists(_spell))
+    {
+        return;
+    }
+
+    with (_spell)
+    {
+        var _stats = spell_get_stats_from_power_value(powerValue);
+
+        moveSpeed = _stats.speed;
+        damage = _stats.damage;
+        radius = _stats.radius;
+    }
+}
+
+function spell_info_to_text(_spellInfo)
+{
+    return spell_power_to_text(_spellInfo.spellPower)
+        + " "
+        + spell_element_to_text(_spellInfo.spellElement)
+        + " "
+        + spell_lane_to_text(_spellInfo.spellLane);
+}
+
+function spell_power_to_text(_spellPower)
+{
+    if (_spellPower == SpellPower.QUICK)
+    {
+        return "Quick";
+    }
+
+    if (_spellPower == SpellPower.MEDIUM)
+    {
+        return "Medium";
+    }
+
+    return "Strong";
+}
+
+function spell_element_to_text(_spellElement)
+{
+    if (_spellElement == SpellElement.FIRE)
+    {
+        return "Fire";
+    }
+
+    if (_spellElement == SpellElement.WATER)
+    {
+        return "Water";
+    }
+
+    return "Air";
+}
+
+function spell_lane_to_text(_spellLane)
+{
+    if (_spellLane == SpellLane.LOW)
+    {
+        return "Low";
+    }
+
+    if (_spellLane == SpellLane.MIDDLE)
+    {
+        return "Middle";
+    }
+
+    return "High";
 }
