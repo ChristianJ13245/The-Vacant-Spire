@@ -14,7 +14,7 @@ function enemy_create()
 
     // simple enemy casting timer
     castTimer = 0;
-    castCooldown = room_speed * 3;
+    castCooldown = room_speed * 2;
 
     // casting state
     isCasting = false;

@@ -14,7 +14,7 @@ function player_input_create()
 
     // cooldown after casting so player cant spam spells
     // same as enemy cooldown
-    playerCastCooldownTime = room_speed * 3;
+    playerCastCooldownTime = room_speed * 1;
     playerCastCooldownTimer = 0;
 
     // input feedback for the bottom arrows

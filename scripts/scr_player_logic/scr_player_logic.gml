@@ -16,18 +16,32 @@ function player_create()
     // Placeholder until proper 32x32 art is imported
     bodyColour = make_colour_rgb(80, 180, 255);
 	
-	// quick cast animation
-	castTimer = 0;
-	castLane = SpellLane.MIDDLE;
+    // quick cast animation
+    castTimer = 0;
+    castLane = SpellLane.MIDDLE;
 
-	// sprites
-	sprIdle = asset_get_index("spr_player_idle");
-	sprCastLow = asset_get_index("spr_player_cast_low");
-	sprCastMid = asset_get_index("spr_player_cast_mid");
-	sprCastHigh = asset_get_index("spr_player_cast_high");
+    // animation values we control ourselves
+    drawSprite = -1;
+    drawFrame = 0;
+    animTick = 0;
 
-	// starts arrow inputs
-	player_input_create();
+    // higher number = slower animation
+    idleFrameDelay = 8;
+    castFrameDelay = 6;
+
+    // sprites
+    sprIdle = asset_get_index("spr_player_idle");
+    sprCastLow = asset_get_index("spr_player_cast_low");
+    sprCastMid = asset_get_index("spr_player_cast_mid");
+    sprCastHigh = asset_get_index("spr_player_cast_high");
+
+    // start idle
+    drawSprite = sprIdle;
+    drawFrame = 0;
+    animTick = 0;
+
+    // starts arrow inputs
+    player_input_create();
 }
 
 function player_step()
@@ -38,13 +52,20 @@ function player_step()
         return;
     }
 	
-	// reads arrow keys 
-	player_input_step();
+    // reads arrow keys 
+    player_input_step();
 
-	if (castTimer > 0)
-	{
-		castTimer -= 1;
-	}
+    player_update_animation();
+
+    if (castTimer > 0)
+    {
+        castTimer -= 1;
+
+        if (castTimer <= 0)
+        {
+            player_set_idle_animation();
+        }
+    }
 
     // when health reaches 0, remove the player
     // game controller detects this and triggers the lose state
@@ -56,12 +77,9 @@ function player_step()
 
 function player_draw()
 {
-    var _spr = player_get_current_sprite();
-
-    if (_spr != -1)
+    if (drawSprite != -1)
     {
-        // 32x32 sprite scaled up
-        draw_sprite_ext(_spr, 0, x, y, 3, 3, 0, c_white, 1);
+        draw_sprite_ext(drawSprite, drawFrame, x, y, 3, 3, 0, c_white, 1);
     }
     else
     {
@@ -70,6 +88,88 @@ function player_draw()
         // fallback box if sprite names are wrong or missing so we dont crash
         draw_rectangle(x - 32, y - 48, x + 32, y + 48, false);
     }
+}
+
+function player_update_animation()
+{
+    if (drawSprite == -1)
+    {
+        return;
+    }
+
+    var _frameCount = sprite_get_number(drawSprite);
+
+    if (_frameCount <= 1)
+    {
+        drawFrame = 0;
+        return;
+    }
+
+    animTick += 1;
+
+    if (castTimer > 0)
+    {
+        if (animTick >= castFrameDelay)
+        {
+            animTick = 0;
+
+            // play cast once, then hold the last frame
+            if (drawFrame < _frameCount - 1)
+            {
+                drawFrame += 1;
+            }
+        }
+    }
+    else
+    {
+        if (animTick >= idleFrameDelay)
+        {
+            animTick = 0;
+
+            drawFrame += 1;
+
+            // idle loops normally
+            if (drawFrame >= _frameCount)
+            {
+                drawFrame = 0;
+            }
+        }
+    }
+}
+
+function player_set_idle_animation()
+{
+    castTimer = 0;
+
+    drawSprite = sprIdle;
+    drawFrame = 0;
+    animTick = 0;
+}
+
+function player_set_cast_animation(_lane)
+{
+    castLane = _lane;
+
+    if (_lane == SpellLane.LOW)
+    {
+        drawSprite = sprCastLow;
+    }
+    else if (_lane == SpellLane.MIDDLE)
+    {
+        drawSprite = sprCastMid;
+    }
+    else
+    {
+        drawSprite = sprCastHigh;
+    }
+
+    drawFrame = 0;
+    animTick = 0;
+
+    var _frameCount = sprite_get_number(drawSprite);
+
+    // enough time to play once, plus a tiny hold so it reads clearly
+    castTimer = (_frameCount * castFrameDelay) + 12;
 }
 
 function player_get_current_sprite()
@@ -99,9 +199,7 @@ function player_cast_spell(_spellInfo)
         return;
     }
 
-    // tiny cast flash / animation window
-    castTimer = 12;
-    castLane = _spellInfo.spellLane;
+    player_set_cast_animation(_spellInfo.spellLane);
 
     var _spawnX = x + (facing * 56);
     var _spawnY = spell_get_lane_y(_spellInfo.spellLane);
@@ -132,5 +230,5 @@ function player_take_damage(_amount)
         currentHealth = 0;
     }
 	
-	global.debugText = "Player took " + string(_amount) + " damage";
+    global.debugText = "Player took " + string(_amount) + " damage";
 }
