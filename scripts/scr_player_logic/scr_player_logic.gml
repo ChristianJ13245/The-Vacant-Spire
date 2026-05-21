@@ -70,14 +70,6 @@ function player_draw()
         // fallback box if sprite names are wrong or missing so we dont crash
         draw_rectangle(x - 32, y - 48, x + 32, y + 48, false);
     }
-
-    // center the name above the player
-    draw_set_halign(fa_center);
-    draw_set_colour(c_white);
-    draw_text(x, y - 72, displayName);
-
-    // reset
-    draw_set_halign(fa_left);
 }
 
 function player_get_current_sprite()

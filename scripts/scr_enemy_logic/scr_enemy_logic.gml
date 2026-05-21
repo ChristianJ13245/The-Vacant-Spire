@@ -89,12 +89,6 @@ function enemy_draw()
         draw_set_colour(bodyColour);
         draw_rectangle(x - 32, y - 48, x + 32, y + 48, false);
     }
-
-    draw_set_halign(fa_center);
-    draw_set_colour(c_white);
-    draw_text(x, y - 72, displayName);
-
-    draw_set_halign(fa_left);
 }
 
 function enemy_update_animation()
