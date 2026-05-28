@@ -1,42 +1,31 @@
-// handles arrow key spell combo input
-// first arrow = power, second arrow = element, third arrow = lane
-// down/right/up are the 3 choices
-// left is saved for block later
+// charge-based spell input
+// left/right cycle element
+// up/down changes lane
+// space charges, releasing space casts
 
 function player_input_create()
 {
-    inputSequence = [];
-    inputCount = 0;
-    inputTimer = 0;
+    // current spell setup
+    // player changes these before charging
+    selectedElement = SpellElement.FIRE;
+    selectedLane = SpellLane.MIDDLE;
 
-    // clears combo if player waits too long
-    inputResetTime = room_speed * 3;
+    // charge state
+    isCharging = false;
+    chargeFrames = 0;
+
+    // charge timings
+    // short = quick, medium = medium, long = strong
+    mediumChargeFrames = room_speed * 0.35;
+    strongChargeFrames = room_speed * 1.1;
+    maxChargeFrames = room_speed * 1.4;
 
     // cooldown after casting so player cant spam spells
-    // same as enemy cooldown
-    playerCastCooldownTime = room_speed * 1;
+    // can tune this after testing
+    playerCastCooldownTime = room_speed * 0.45;
     playerCastCooldownTimer = 0;
 
-    // input feedback for the bottom arrows
-    inputVisualTime = 24;
-    inputVisualTimer = [0, 0, 0];
-
-    // wait after casting so we dont insta clear arrows
-    inputVisualClearTimer = 0;
-    inputVisualClearDelay = room_speed * 0.5;
-
-    // quick lookups so we dont need huge if chains everywhere
-    spellPowerValues = [SpellPower.QUICK, SpellPower.MEDIUM, SpellPower.STRONG];
-    spellElementValues = [SpellElement.FIRE, SpellElement.WATER, SpellElement.AIR];
-    spellLaneValues = [SpellLane.LOW, SpellLane.MIDDLE, SpellLane.HIGH];
-
-    spellPowerText = ["Quick", "Medium", "Strong"];
-    spellElementText = ["Fire", "Water", "Air"];
-    spellLaneText = ["Low", "Middle", "High"];
-
-    global.inputVisualArrows = [-1, -1, -1];
-    global.inputVisualText = ["_", "_", "_"];
-    global.inputText = "";
+    global.inputText = player_input_status_text();
 }
 
 function player_input_step()
@@ -46,216 +35,183 @@ function player_input_step()
         return;
     }
 
-    inputTimer += 1;
-
     // tick down spell cooldown
     if (playerCastCooldownTimer > 0)
     {
         playerCastCooldownTimer -= 1;
     }
 
-    // clears the bottom arrow UI after casting
-    if (inputVisualClearTimer > 0)
+    // dont change element/lane while charging
+    // keeps the spell choice locked once space is held
+    if (!isCharging)
     {
-        inputVisualClearTimer -= 1;
-
-        if (inputVisualClearTimer <= 0)
+        // cycle element
+        if (keyboard_check_pressed(vk_left))
         {
-            player_input_clear_visuals();
+            player_input_cycle_element(-1);
+        }
+
+        if (keyboard_check_pressed(vk_right))
+        {
+            player_input_cycle_element(1);
+        }
+
+        // change lane
+        if (keyboard_check_pressed(vk_up))
+        {
+            player_input_move_lane(1);
+        }
+
+        if (keyboard_check_pressed(vk_down))
+        {
+            player_input_move_lane(-1);
         }
     }
 
-    // tick down the arrow timers
-    for (var i = 0; i < 3; i += 1)
+    // start charge
+    if (keyboard_check_pressed(vk_space))
     {
-        if (inputVisualTimer[i] > 0)
-        {
-            inputVisualTimer[i] -= 1;
-        }
+        player_input_start_charge();
     }
 
-    if (inputCount > 0 && inputTimer > inputResetTime)
+    // keep charging while space is held
+    if (isCharging && keyboard_check(vk_space))
     {
-        player_input_clear();
-        player_input_clear_visuals();
+        player_input_update_charge();
     }
 
-    // dont accept new spell inputs while cooling down
+    // release to cast
+    if (isCharging && keyboard_check_released(vk_space))
+    {
+        player_input_release_charge();
+    }
+
+    global.inputText = player_input_status_text();
+}
+
+function player_input_start_charge()
+{
+    // dont start a new charge during cooldown
     if (playerCastCooldownTimer > 0)
     {
         return;
     }
 
-    // input 1 = power, input 2 = element, input 3 = lane
-    // down/right/up are the 3 choices each time
-    if (keyboard_check_pressed(vk_down))
-    {
-        player_input_add(0);
-    }
-
-    if (keyboard_check_pressed(vk_right))
-    {
-        player_input_add(1);
-    }
-
-    if (keyboard_check_pressed(vk_up))
-    {
-        player_input_add(2);
-    }
-
-    // left arrow is intentionally unused
-    // saving it for block later
+    isCharging = true;
+    chargeFrames = 0;
 }
 
-function player_input_add(_input)
+function player_input_update_charge()
 {
-    inputVisualClearTimer = 0;
+    chargeFrames += 1;
 
-    var _slot = inputCount;
-
-    inputSequence[inputCount] = _input;
-    inputCount += 1;
-    inputTimer = 0;
-
-    // store the pressed arrow for the bottom UI
-    if (_slot >= 0 && _slot < 3)
+    // caps charge so it doesnt climb forever
+    if (chargeFrames > maxChargeFrames)
     {
-        global.inputVisualArrows[_slot] = _input;
-        inputVisualTimer[_slot] = inputVisualTime;
-
-        if (_slot == 0)
-        {
-            global.inputVisualText[_slot] = player_input_strength_text(_input);
-        }
-        else if (_slot == 1)
-        {
-            global.inputVisualText[_slot] = player_input_element_text(_input);
-        }
-        else
-        {
-            global.inputVisualText[_slot] = player_input_lane_text(_input);
-        }
-    }
-
-    global.inputText = player_input_sequence_to_text();
-
-    if (inputCount >= 3)
-    {
-        player_input_try_cast();
+        chargeFrames = maxChargeFrames;
     }
 }
 
-function player_input_clear()
+function player_input_release_charge()
 {
-    inputSequence = [];
-    inputCount = 0;
-    inputTimer = 0;
-
-    global.inputText = "";
-}
-
-function player_input_clear_visuals()
-{
-    global.inputVisualArrows = [-1, -1, -1];
-    global.inputVisualText = ["_", "_", "_"];
-    inputVisualTimer = [0, 0, 0];
-}
-
-function player_input_try_cast()
-{
-    if (inputCount < 3)
+    // if cooldown somehow starts, cancel safely
+    if (playerCastCooldownTimer > 0)
     {
+        isCharging = false;
+        chargeFrames = 0;
         return;
     }
+
+    var _spellPower = player_input_power_from_charge();
+    var _spellInfo = new SpellData(_spellPower, selectedElement, selectedLane);
+
+	// cast function handles mana checking
+	player_cast_spell(_spellInfo);
+
+	isCharging = false;
+	chargeFrames = 0;
+
+	// small input cooldown either way so space cant machine-gun
+	playerCastCooldownTimer = playerCastCooldownTime;
+}
+
+function player_input_power_from_charge()
+{
+    // tap / tiny charge
+    if (chargeFrames < mediumChargeFrames)
+    {
+        return SpellPower.QUICK;
+    }
+
+    // decent charge
+    if (chargeFrames < strongChargeFrames)
+    {
+        return SpellPower.MEDIUM;
+    }
+
+    // full charge
+    return SpellPower.STRONG;
+}
+
+function player_input_move_lane(_direction)
+{
+    selectedLane += _direction;
+
+    // enum order is low = 0, middle = 1, high = 2
+    if (selectedLane < SpellLane.LOW)
+    {
+        selectedLane = SpellLane.LOW;
+    }
+
+    if (selectedLane > SpellLane.HIGH)
+    {
+        selectedLane = SpellLane.HIGH;
+    }
+}
+
+function player_input_cycle_element(_direction)
+{
+    selectedElement += _direction;
+
+    // wrap around backwards
+    if (selectedElement < SpellElement.FIRE)
+    {
+        selectedElement = SpellElement.AIR;
+    }
+
+    // wrap around forwards
+    if (selectedElement > SpellElement.AIR)
+    {
+        selectedElement = SpellElement.FIRE;
+    }
+}
+
+function player_input_charge_ratio()
+{
+    if (maxChargeFrames <= 0)
+    {
+        return 0;
+    }
+
+    return clamp(chargeFrames / maxChargeFrames, 0, 1);
+}
+
+function player_input_status_text()
+{
+    var _powerText = "Ready";
 
     if (playerCastCooldownTimer > 0)
     {
-        player_input_clear();
-        player_input_clear_visuals();
-        return;
+        _powerText = "Cooldown";
     }
-
-    var _spellInfo = player_input_to_spell_info();
-
-    player_cast_spell(_spellInfo);
-
-    global.debugText = "Player cast " + spell_info_to_text(_spellInfo);
-
-    // start cooldown after casting
-    playerCastCooldownTimer = playerCastCooldownTime;
-
-    // clear combo straight away
-    player_input_clear();
-
-    // keep the arrows visible for half a second
-    inputVisualClearTimer = inputVisualClearDelay;
-}
-
-function player_input_to_spell_info()
-{
-    var _powerInput = inputSequence[0];
-    var _elementInput = inputSequence[1];
-    var _laneInput = inputSequence[2];
-
-    var _spellPower = spellPowerValues[_powerInput];
-    var _spellElement = spellElementValues[_elementInput];
-    var _spellLane = spellLaneValues[_laneInput];
-
-    return new SpellData(_spellPower, _spellElement, _spellLane);
-}
-
-function player_input_sequence_to_text()
-{
-    var _text = "";
-
-    // show strength after first key
-    if (inputCount >= 1)
+    else if (isCharging)
     {
-        _text += player_input_strength_text(inputSequence[0]);
-    }
-    else
-    {
-        _text += "_";
+        _powerText = spell_power_to_text(player_input_power_from_charge());
     }
 
-    _text += " ";
-
-    // show element after second key
-    if (inputCount >= 2)
-    {
-        _text += player_input_element_text(inputSequence[1]);
-    }
-    else
-    {
-        _text += "_";
-    }
-
-    _text += " ";
-
-    // show lane after third key
-    if (inputCount >= 3)
-    {
-        _text += player_input_lane_text(inputSequence[2]);
-    }
-    else
-    {
-        _text += "_";
-    }
-
-    return _text;
-}
-
-function player_input_strength_text(_input)
-{
-    return spellPowerText[_input];
-}
-
-function player_input_element_text(_input)
-{
-    return spellElementText[_input];
-}
-
-function player_input_lane_text(_input)
-{
-    return spellLaneText[_input];
+    return spell_element_to_text(selectedElement)
+        + " | "
+        + spell_lane_to_text(selectedLane)
+        + " | "
+        + _powerText;
 }

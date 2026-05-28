@@ -30,6 +30,7 @@
     {"id":{"name":"spr_background","path":"sprites/spr_background/spr_background.yy",},"order":9,},
     {"id":{"name":"spr_aunt_rose_cast_low","path":"sprites/spr_aunt_rose_cast_low/spr_aunt_rose_cast_low.yy",},"order":0,},
     {"id":{"name":"spr_spell_air","path":"sprites/spr_spell_air/spr_spell_air.yy",},"order":1,},
+    {"id":{"name":"shd_player_aura","path":"shaders/shd_player_aura/shd_player_aura.yy",},"order":0,},
     {"id":{"name":"spr_arrow_right","path":"sprites/spr_arrow_right/spr_arrow_right.yy",},"order":1,},
     {"id":{"name":"spr_spell_fire","path":"sprites/spr_spell_fire/spr_spell_fire.yy",},"order":0,},
   ],

@@ -230,10 +230,22 @@ function game_draw_lanes()
     var _cfg = global.config;
 
     // small side padding
-    var _leftX = 200;
-    var _rightX = room_width - 200;
+    var _leftX = 80;
+    var _rightX = room_width - 80;
 
-    draw_set_alpha(0.35);
+    // default to middle if the player is missing for some reason
+    var _selectedLane = SpellLane.MIDDLE;
+
+    if (instance_exists(global.player))
+    {
+        if (variable_instance_exists(global.player, "selectedLane"))
+        {
+            _selectedLane = global.player.selectedLane;
+        }
+    }
+
+    // dim lane lines first
+    draw_set_alpha(0.25);
     draw_set_colour(c_white);
 
     draw_line(_leftX, _cfg.laneHighY, _rightX, _cfg.laneHighY);
@@ -241,4 +253,57 @@ function game_draw_lanes()
     draw_line(_leftX, _cfg.laneLowY, _rightX, _cfg.laneLowY);
 
     draw_set_alpha(1);
+
+    // draw selected lane on top
+    // makes it way easier to see where the next spell will cast
+    var _laneY = _cfg.laneMiddleY;
+
+    if (_selectedLane == SpellLane.LOW)
+    {
+        _laneY = _cfg.laneLowY;
+    }
+    else if (_selectedLane == SpellLane.HIGH)
+    {
+        _laneY = _cfg.laneHighY;
+    }
+
+    // glow ish selected lane
+    draw_set_alpha(0.18);
+    draw_set_colour(game_get_selected_element_colour());
+    draw_rectangle(_leftX, _laneY - 28, _rightX, _laneY + 28, false);
+
+    draw_set_alpha(0.9);
+    draw_set_colour(game_get_selected_element_colour());
+    draw_line_width(_leftX, _laneY, _rightX, _laneY, 4);
+
+    draw_set_alpha(1);
+    draw_set_colour(c_white);
+}
+
+function game_get_selected_element_colour()
+{
+    // fallback colour if player/input is not ready
+    var _colour = make_colour_rgb(120, 220, 255);
+
+    if (!instance_exists(global.player))
+    {
+        return _colour;
+    }
+
+    if (!variable_instance_exists(global.player, "selectedElement"))
+    {
+        return _colour;
+    }
+
+    if (global.player.selectedElement == SpellElement.FIRE)
+    {
+        return make_colour_rgb(255, 90, 30);
+    }
+
+    if (global.player.selectedElement == SpellElement.WATER)
+    {
+        return make_colour_rgb(60, 150, 255);
+    }
+
+    return make_colour_rgb(220, 240, 255);
 }

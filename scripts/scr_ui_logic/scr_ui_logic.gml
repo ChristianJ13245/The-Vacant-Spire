@@ -45,9 +45,17 @@ function ui_draw_main_menu()
 
     draw_text(_guiW * 0.5, 160, "THE VACANT SPIRE");
     draw_text(_guiW * 0.5, 200, "Reclaim your tower and serve the necromancer with legal nonsense!");
+	draw_text(_guiW * 0.5, 220, "Controls:");
+	draw_text(_guiW * 0.5, 240, "Left / Right = Change Element");
+	draw_text(_guiW * 0.5, 260, "Up / Down = Change spell cast lane");
+	draw_text(_guiW * 0.5, 280, "Hold space = Charge your spell");
+	draw_text(_guiW * 0.5, 300, "Release space = Cast");
+	draw_text(_guiW * 0.5, 320, "Fire beats air");
+	draw_text(_guiW * 0.5, 340, "Air beats water");
+	draw_text(_guiW * 0.5, 360, "Water beats fire");
 
     // We can replace this with buttons later
-    draw_text(_guiW * 0.5, 300, "Press Enter or Space to Start");
+    draw_text(_guiW * 0.5, 400, "Press Enter or Space to Start");
 
     draw_set_halign(fa_left);
 }
@@ -83,6 +91,15 @@ function ui_draw_battle_hud()
             ui_draw_health_bar(_playerBarX, _barY, _barW, _barH, global.player.currentHealth, global.player.maxHealth, "Player", false);
         }
     }
+	
+	// player mana bar
+	if (instance_exists(global.player))
+	{
+		if (variable_instance_exists(global.player, "currentMana") && variable_instance_exists(global.player, "maxMana"))
+		{
+			ui_draw_mana_bar(_playerBarX, _barY + 44, _barW, 14, global.player.currentMana, global.player.maxMana, "Mana");
+		}
+	}
 
     // enemy health bar
     if (instance_exists(global.enemy))
@@ -93,73 +110,86 @@ function ui_draw_battle_hud()
         }
     }
 
-    ui_draw_input_arrows();
+    ui_draw_spell_controls();
 }
 
-function ui_draw_input_arrows()
+function ui_draw_spell_controls()
 {
     var _guiW = display_get_gui_width();
     var _guiH = display_get_gui_height();
 
-    var _centerX = _guiW * 0.5;
-    var _arrowY = _guiH - 118;
-    var _labelY = _arrowY + 42;
-    var _valueY = _arrowY + 68;
+    var _boxW = 560;
+    var _boxH = 122;
+    var _boxX = (_guiW - _boxW) * 0.5;
+    var _boxY = _guiH - _boxH - 24;
 
-    var _spacing = 96;
-    var _scale = 3;
+    // bottom control box
+    draw_set_alpha(0.65);
+    draw_set_colour(c_black);
+    draw_rectangle(_boxX, _boxY, _boxX + _boxW, _boxY + _boxH, false);
+    draw_set_alpha(1);
 
-    var _slotX0 = _centerX - _spacing;
-    var _slotX1 = _centerX;
-    var _slotX2 = _centerX + _spacing;
+    draw_set_colour(c_white);
+    draw_rectangle(_boxX, _boxY, _boxX + _boxW, _boxY + _boxH, true);
 
     draw_set_halign(fa_center);
-    draw_set_valign(fa_middle);
+    draw_set_valign(fa_top);
 
-    ui_draw_input_arrow_slot(_slotX0, _arrowY, _labelY, _valueY, 0, "Power", _scale);
-    ui_draw_input_arrow_slot(_slotX1, _arrowY, _labelY, _valueY, 1, "Element", _scale);
-    ui_draw_input_arrow_slot(_slotX2, _arrowY, _labelY, _valueY, 2, "Lane", _scale);
+    // quick controls reminder
+    draw_text(_guiW * 0.5, _boxY + 12, "Left/Right: Element     Up/Down: Lane     Space: Charge");
+
+    // current spell setup
+    draw_text(_guiW * 0.5, _boxY + 40, "Spell: " + string(global.inputText));
+
+    ui_draw_charge_bar(_boxX + 64, _boxY + 78, _boxW - 128, 18);
 
     draw_set_halign(fa_left);
     draw_set_valign(fa_top);
-    draw_set_alpha(1);
 }
 
-function ui_draw_input_arrow_slot(_x, _arrowY, _labelY, _valueY, _slot, _label, _scale)
+function ui_draw_charge_bar(_x, _y, _w, _h)
 {
-    var _arrowInput = global.inputVisualArrows[_slot];
-    var _valueText = global.inputVisualText[_slot];
+    var _ratio = 0;
 
-    draw_set_alpha(0.35);
-
-    if (_arrowInput != -1)
+    // charge info lives on the player
+    if (instance_exists(global.player))
     {
-        draw_set_alpha(1);
-
-        var _spr = ui_get_arrow_sprite(_arrowInput);
-        draw_sprite_ext(_spr, 0, _x, _arrowY, _scale, _scale, 0, c_white, 1);
+        if (variable_instance_exists(global.player, "isCharging"))
+        {
+            if (global.player.isCharging)
+            {
+                with (global.player)
+                {
+                    _ratio = player_input_charge_ratio();
+                }
+            }
+        }
     }
 
-    draw_set_alpha(1);
+    // empty bar
+    draw_set_colour(c_dkgray);
+    draw_rectangle(_x, _y, _x + _w, _y + _h, false);
+
+    // charge fill
+    draw_set_colour(c_yellow);
+    draw_rectangle(_x, _y, _x + (_w * _ratio), _y + _h, false);
+
+    // outline
     draw_set_colour(c_white);
+    draw_rectangle(_x, _y, _x + _w, _y + _h, true);
 
-    draw_text(_x, _labelY, _label);
-    draw_text(_x, _valueY, _valueText);
-}
-
-function ui_get_arrow_sprite(_input)
-{
-    if (_input == 0)
+    // little markers for medium and strong charge points
+    if (instance_exists(global.player))
     {
-        return spr_arrow_down;
-    }
+        if (variable_instance_exists(global.player, "mediumChargeFrames") && variable_instance_exists(global.player, "maxChargeFrames"))
+        {
+            var _mediumX = _x + _w * (global.player.mediumChargeFrames / global.player.maxChargeFrames);
+            var _strongX = _x + _w * (global.player.strongChargeFrames / global.player.maxChargeFrames);
 
-    if (_input == 1)
-    {
-        return spr_arrow_right;
+            draw_line(_mediumX, _y - 4, _mediumX, _y + _h + 4);
+            draw_line(_strongX, _y - 4, _strongX, _y + _h + 4);
+        }
     }
-
-    return spr_arrow_up;
 }
 
 function ui_draw_pause_menu()
@@ -221,6 +251,33 @@ function ui_draw_health_bar(_x, _y, _barW, _barH, _current, _max, _label, _align
     draw_rectangle(_x, _y, _x + (_barW * _ratio), _y + _barH, false);
 
     // white outline
+    draw_set_colour(c_white);
+    draw_rectangle(_x, _y, _x + _barW, _y + _barH, true);
+}
+
+function ui_draw_mana_bar(_x, _y, _barW, _barH, _current, _max, _label)
+{
+    var _ratio = 0;
+
+    if (_max > 0)
+    {
+        _ratio = _current / _max;
+    }
+
+    _ratio = clamp(_ratio, 0, 1);
+
+    draw_set_colour(c_white);
+    draw_text(_x, _y - 18, _label);
+
+    // empty bar
+    draw_set_colour(c_dkgray);
+    draw_rectangle(_x, _y, _x + _barW, _y + _barH, false);
+
+    // mana fill
+    draw_set_colour(make_colour_rgb(60, 150, 255));
+    draw_rectangle(_x, _y, _x + (_barW * _ratio), _y + _barH, false);
+
+    // outline
     draw_set_colour(c_white);
     draw_rectangle(_x, _y, _x + _barW, _y + _barH, true);
 }

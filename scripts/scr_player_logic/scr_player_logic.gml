@@ -19,11 +19,23 @@ function player_create()
     // quick cast animation
     castTimer = 0;
     castLane = SpellLane.MIDDLE;
+	
+	// mana stops the player from spamming spells forever
+	maxMana = 100;
+	currentMana = maxMana;
+
+	// mana regen
+	// regenDelay stops mana coming back instantly after casting
+	manaRegenAmount = 0.75;
+	manaRegenDelay = room_speed * 0.6;
+	manaRegenTimer = 0;
 
     // animation values we control ourselves
     drawSprite = -1;
     drawFrame = 0;
     animTick = 0;
+	image_speed = 0;
+	image_index = 0;
 
     // higher number = slower animation
     idleFrameDelay = 8;
@@ -66,6 +78,9 @@ function player_step()
             player_set_idle_animation();
         }
     }
+	
+	// bring mana back over time
+	player_update_mana();
 
     // when health reaches 0, remove the player
     // game controller detects this and triggers the lose state
@@ -77,17 +92,114 @@ function player_step()
 
 function player_draw()
 {
-    if (drawSprite != -1)
+    var _spr = drawSprite;
+
+    if (_spr != -1)
     {
-        draw_sprite_ext(drawSprite, drawFrame, x, y, 3, 3, 0, c_white, 1);
+        // aura behind player
+        player_draw_aura(_spr);
+
+        // normal player sprite
+        // drawFrame is our controlled animation frame
+        draw_sprite_ext(_spr, drawFrame, x, y, 3, 3, 0, c_white, 1);
     }
     else
     {
         draw_set_colour(bodyColour);
-
-        // fallback box if sprite names are wrong or missing so we dont crash
         draw_rectangle(x - 32, y - 48, x + 32, y + 48, false);
     }
+}
+
+function player_draw_aura(_spr)
+{
+    if (_spr == -1)
+    {
+        return;
+    }
+
+    shader_set(shd_player_aura);
+
+    var _colourUniform = shader_get_uniform(shd_player_aura, "u_aura_colour");
+    var _cutoffUniform = shader_get_uniform(shd_player_aura, "u_alpha_cutoff");
+
+    // blue player aura
+    shader_set_uniform_f(_colourUniform, 0.15, 0.75, 1.0, 0.45);
+
+    // ignores basically transparent pixels
+    shader_set_uniform_f(_cutoffUniform, 0.05);
+
+    var _scale = 3;
+    var _offset = 4;
+
+    // draw tinted copies around the player
+    // normal sprite gets drawn after this, so this sits behind them
+    draw_sprite_ext(_spr, drawFrame, x - _offset, y, _scale, _scale, 0, c_white, 1);
+    draw_sprite_ext(_spr, drawFrame, x + _offset, y, _scale, _scale, 0, c_white, 1);
+    draw_sprite_ext(_spr, drawFrame, x, y - _offset, _scale, _scale, 0, c_white, 1);
+    draw_sprite_ext(_spr, drawFrame, x, y + _offset, _scale, _scale, 0, c_white, 1);
+
+    draw_sprite_ext(_spr, drawFrame, x - 3, y - 3, _scale, _scale, 0, c_white, 1);
+    draw_sprite_ext(_spr, drawFrame, x + 3, y - 3, _scale, _scale, 0, c_white, 1);
+    draw_sprite_ext(_spr, drawFrame, x - 3, y + 3, _scale, _scale, 0, c_white, 1);
+    draw_sprite_ext(_spr, drawFrame, x + 3, y + 3, _scale, _scale, 0, c_white, 1);
+
+    shader_reset();
+}
+
+function player_update_mana()
+{
+    if (manaRegenTimer > 0)
+    {
+        manaRegenTimer -= 1;
+        return;
+    }
+
+    if (currentMana < maxMana)
+    {
+        currentMana += manaRegenAmount;
+
+        if (currentMana > maxMana)
+        {
+            currentMana = maxMana;
+        }
+    }
+}
+
+function player_get_spell_mana_cost(_spellPower)
+{
+    if (_spellPower == SpellPower.QUICK)
+    {
+        return 18;
+    }
+
+    if (_spellPower == SpellPower.MEDIUM)
+    {
+        return 35;
+    }
+
+    return 60;
+}
+
+function player_has_enough_mana(_spellPower)
+{
+    var _cost = player_get_spell_mana_cost(_spellPower);
+
+    return currentMana >= _cost;
+}
+
+function player_spend_mana(_spellPower)
+{
+    var _cost = player_get_spell_mana_cost(_spellPower);
+
+    currentMana -= _cost;
+
+    if (currentMana < 0)
+    {
+        currentMana = 0;
+    }
+
+    // small delay before mana starts coming back
+    manaRegenTimer = manaRegenDelay;
 }
 
 function player_update_animation()
@@ -198,6 +310,14 @@ function player_cast_spell(_spellInfo)
     {
         return;
     }
+
+	if (!player_has_enough_mana(_spellInfo.spellPower))
+	{
+		global.debugText = "Not enough mana";
+		return;
+	}
+
+player_spend_mana(_spellInfo.spellPower);
 
     player_set_cast_animation(_spellInfo.spellLane);
 
