@@ -31,7 +31,6 @@ function enemy_create()
     // casting state
     isCasting = false;
     castAnimTimer = 0;
-    castPose = SpellLane.MIDDLE;
 
     // animation values we control ourselves
     drawSprite = -1;
@@ -44,9 +43,9 @@ function enemy_create()
 
     // sprites come from the enemy config now
     sprIdle = enemy_get_sprite(enemyConfig.idleSpriteName);
-    sprCastLow = enemy_get_sprite(enemyConfig.castLowSpriteName, sprIdle);
-    sprCastMid = enemy_get_sprite(enemyConfig.castMidSpriteName, sprIdle);
-    sprCastHigh = enemy_get_sprite(enemyConfig.castHighSpriteName, sprIdle);
+    var _attackFallback = enemy_get_sprite(enemyConfig.fallbackAttackSpriteName, sprIdle);
+    sprAttack = enemy_get_sprite(enemyConfig.attackSpriteName, _attackFallback);
+    sprFace = enemy_get_sprite(enemyConfig.faceSpriteName);
 
     // start idle
     drawSprite = sprIdle;
@@ -78,9 +77,9 @@ function enemy_get_config(_enemyType)
                 moveFollowChance: 0,
                 castDelay: 3,
                 idleSpriteName: "spr_training_dummy_idle",
-                castLowSpriteName: "spr_training_dummy_cast_low",
-                castMidSpriteName: "spr_training_dummy_cast_mid",
-                castHighSpriteName: "spr_training_dummy_cast_high"
+                attackSpriteName: "spr_training_dummy_attack",
+                fallbackAttackSpriteName: "",
+                faceSpriteName: "spr_training_dummy_face"
             };
 
         case EnemyType.GOBLIN:
@@ -93,9 +92,9 @@ function enemy_get_config(_enemyType)
                 moveFollowChance: 65,
                 castDelay: 3,
                 idleSpriteName: "spr_goblin_idle",
-                castLowSpriteName: "spr_goblin",
-                castMidSpriteName: "spr_goblin",
-                castHighSpriteName: "spr_goblin"
+                attackSpriteName: "spr_goblin_attack",
+                fallbackAttackSpriteName: "spr_goblin",
+                faceSpriteName: "spr_goblin_face"
             };
     }
 
@@ -362,23 +361,10 @@ function enemy_set_idle_animation()
     animTick = 0;
 }
 
-function enemy_set_cast_animation(_pose)
+function enemy_set_cast_animation()
 {
     isCasting = true;
-    castPose = _pose;
-
-    if (_pose == SpellLane.LOW)
-    {
-        drawSprite = sprCastLow;
-    }
-    else if (_pose == SpellLane.MIDDLE)
-    {
-        drawSprite = sprCastMid;
-    }
-    else
-    {
-        drawSprite = sprCastHigh;
-    }
+    drawSprite = sprAttack;
 
     drawFrame = 0;
     animTick = 0;
@@ -415,8 +401,7 @@ function enemy_cast_spell(_spellInfo)
     // enemy fires from current height too
     var _spawnY = y - 8;
 
-    var _pose = cast_pose_from_y(_spawnY);
-    enemy_set_cast_animation(_pose);
+    enemy_set_cast_animation();
 
     spell_spawn(id, _spellInfo, _spawnX, _spawnY, facing);
 
