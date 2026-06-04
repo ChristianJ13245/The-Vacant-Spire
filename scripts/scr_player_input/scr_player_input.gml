@@ -62,6 +62,12 @@ function player_input_step()
         player_input_start_charge();
     }
 
+    // if K stayed held, start again once mana is full
+    if (!isCharging && keyboard_check(castKey) && player_input_can_auto_charge())
+    {
+        player_input_start_charge();
+    }
+
     // keep charging while K is held
     if (isCharging && keyboard_check(castKey))
     {
@@ -87,6 +93,16 @@ function player_input_start_charge()
 
     isCharging = true;
     chargeFrames = 0;
+}
+
+function player_input_can_auto_charge()
+{
+    if (playerCastCooldownTimer > 0)
+    {
+        return false;
+    }
+
+    return currentMana >= maxMana;
 }
 
 function player_input_update_charge()
