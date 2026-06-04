@@ -10,8 +10,7 @@ enum GameState
     LOST
 }
 
-// The spell enums not fully used yet
-// They are here for clarity at the moment
+// spell power controls speed, damage, size, mana cost, and clash strength
 enum SpellPower
 {
     QUICK,
@@ -26,6 +25,8 @@ enum SpellElement
     AIR
 }
 
+// keeping this because our cast animations are still low/mid/high
+// spells are not locked to lanes anymore though
 enum SpellLane
 {
     LOW,
@@ -33,8 +34,8 @@ enum SpellLane
     HIGH
 }
 
-// simple config object for the prototype
-// keeps room positions and lane positions out of random scripts
+// simple config object for the game
+// keeps arena positions and shared numbers out of random scripts
 function PrototypeConfig() constructor
 {
     roomWidth = 1280;
@@ -45,27 +46,30 @@ function PrototypeConfig() constructor
     playerStartX = 160;
     enemyStartX = 1120;
 
-    arenaTopY = 230;
-    arenaBottomY = 650;
+    // tighter movement area
+    // higher top number = less upward movement
+    arenaTopY = 440;
+    arenaBottomY = 600;
 
-    // lanes
-    laneHighY = 330;
-    laneMiddleY = 455;
+    // these are just soft height references now
+    // we do NOT draw lane highlights anymore
+    // still useful for picking low/mid/high cast animations
+    laneHighY = 400;
+    laneMiddleY = 490;
     laneLowY = 580;
 
-    // wizards stand around the middle lane for now
-    // later sprites can be offset if they need to stand on a ground line
+    // start around the middle of the fight area
     wizardY = laneMiddleY;
 
     maxFloor = 2;
 }
 
 // spell object exists in the room, this struct stores what kind of spell it is
-function SpellData(_spellPower, _spellElement, _spellLane) constructor
+// spells do not store a lane now, they spawn from the caster's current height
+function SpellData(_spellPower, _spellElement) constructor
 {
     spellPower = _spellPower;
     spellElement = _spellElement;
-    spellLane = _spellLane;
 
     // number version of the power
     // makes clash maths easier, quick = 1, medium = 2, strong = 3
@@ -113,28 +117,68 @@ function spell_value_to_power(_value)
     return SpellPower.STRONG;
 }
 
-// keeps speed, damage and size tied to current power
-// this lets reduced spells still behave correctly
+// keeps speed, damage and fallback size tied to current power
+// spell sprite bbox is used for actual collision when possible
 function spell_get_stats_from_power_value(_powerValue)
 {
     var _stats = {
         speed: 10,
         damage: 8,
-        radius: 10
+        radius: 8
     };
 
     if (_powerValue == 2)
     {
         _stats.speed = 7;
         _stats.damage = 14;
-        _stats.radius = 15;
+        _stats.radius = 12;
     }
     else if (_powerValue >= 3)
     {
         _stats.speed = 4;
         _stats.damage = 24;
-        _stats.radius = 22;
+        _stats.radius = 16;
     }
 
     return _stats;
+}
+
+// scales characters based on how far down the screen they are
+// top of arena = slightly smaller, bottom = full size
+function depth_scale_from_y(_y)
+{
+    var _cfg = global.config;
+    var _range = _cfg.arenaBottomY - _cfg.arenaTopY;
+
+    if (_range <= 0)
+    {
+        return 1;
+    }
+
+    var _amount = (_y - _cfg.arenaTopY) / _range;
+    _amount = clamp(_amount, 0, 1);
+
+    // subtle depth feel
+    // 0.88 at top, 1.0 at bottom
+    return 0.88 + (0.12 * _amount);
+}
+
+// picks low/mid/high cast pose based on a y position
+// this is only for choosing animation now
+function cast_pose_from_y(_y)
+{
+    var _cfg = global.config;
+    var _third = (_cfg.arenaBottomY - _cfg.arenaTopY) / 3;
+
+    if (_y < _cfg.arenaTopY + _third)
+    {
+        return SpellLane.HIGH;
+    }
+
+    if (_y < _cfg.arenaTopY + (_third * 2))
+    {
+        return SpellLane.MIDDLE;
+    }
+
+    return SpellLane.LOW;
 }

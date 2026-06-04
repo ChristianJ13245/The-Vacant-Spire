@@ -7,10 +7,14 @@ function enemy_create()
     maxHealth = 100;
     currentHealth = maxHealth;
     isDead = false;
-    hitRadius = 42;
     displayName = "Enemy";
     facing = -1;
     bodyColour = make_colour_rgb(210, 80, 255);
+
+    // movement
+    moveSpeed = 2.4;
+    minY = global.config.arenaTopY;
+    maxY = global.config.arenaBottomY;
 
     // simple enemy casting timer
     castTimer = 0;
@@ -19,7 +23,7 @@ function enemy_create()
     // casting state
     isCasting = false;
     castAnimTimer = 0;
-    castLane = SpellLane.MIDDLE;
+    castPose = SpellLane.MIDDLE;
 
     // animation values we control ourselves
     drawSprite = -1;
@@ -48,6 +52,8 @@ function enemy_step()
     {
         return;
     }
+
+    enemy_move_basic();
 
     // enemy casts on a timer
     castTimer += 1;
@@ -78,17 +84,128 @@ function enemy_step()
     }
 }
 
+function enemy_move_basic()
+{
+    if (!instance_exists(global.player))
+    {
+        return;
+    }
+
+    // simple tracking so enemy doesn't sit in one perfect line forever
+    var _targetY = global.player.y;
+
+    if (y < _targetY - 16)
+    {
+        y += moveSpeed;
+    }
+    else if (y > _targetY + 16)
+    {
+        y -= moveSpeed;
+    }
+
+    y = clamp(y, minY, maxY);
+}
+
 function enemy_draw()
 {
+    var _scale = enemy_get_depth_scale();
+
     if (drawSprite != -1)
     {
-        draw_sprite_ext(drawSprite, drawFrame, x, y, 3, 3, 0, c_white, 1);
+        draw_sprite_ext(drawSprite, drawFrame, x, y, 3 * _scale, 3 * _scale, 0, c_white, 1);
     }
     else
     {
         draw_set_colour(bodyColour);
         draw_rectangle(x - 32, y - 48, x + 32, y + 48, false);
     }
+
+    // uncomment while tuning hitboxes
+    // enemy_draw_debug_hitbox();
+}
+
+function enemy_get_depth_scale()
+{
+    return depth_scale_from_y(y);
+}
+
+function enemy_get_hitbox_scale()
+{
+    return 3 * enemy_get_depth_scale();
+}
+
+// sprite bbox based hitbox
+// uses the current sprite mask/bbox instead of hardcoded body size
+function enemy_get_hitbox_left()
+{
+    if (drawSprite == -1)
+    {
+        return x - 32;
+    }
+
+    var _scale = enemy_get_hitbox_scale();
+    var _originX = sprite_get_xoffset(drawSprite);
+    var _bboxLeft = sprite_get_bbox_left(drawSprite);
+
+    return x + ((_bboxLeft - _originX) * _scale);
+}
+
+function enemy_get_hitbox_right()
+{
+    if (drawSprite == -1)
+    {
+        return x + 32;
+    }
+
+    var _scale = enemy_get_hitbox_scale();
+    var _originX = sprite_get_xoffset(drawSprite);
+    var _bboxRight = sprite_get_bbox_right(drawSprite);
+
+    return x + ((_bboxRight - _originX) * _scale);
+}
+
+function enemy_get_hitbox_top()
+{
+    if (drawSprite == -1)
+    {
+        return y - 48;
+    }
+
+    var _scale = enemy_get_hitbox_scale();
+    var _originY = sprite_get_yoffset(drawSprite);
+    var _bboxTop = sprite_get_bbox_top(drawSprite);
+
+    return y + ((_bboxTop - _originY) * _scale);
+}
+
+function enemy_get_hitbox_bottom()
+{
+    if (drawSprite == -1)
+    {
+        return y + 48;
+    }
+
+    var _scale = enemy_get_hitbox_scale();
+    var _originY = sprite_get_yoffset(drawSprite);
+    var _bboxBottom = sprite_get_bbox_bottom(drawSprite);
+
+    return y + ((_bboxBottom - _originY) * _scale);
+}
+
+function enemy_draw_debug_hitbox()
+{
+    draw_set_alpha(0.45);
+    draw_set_colour(c_red);
+
+    draw_rectangle(
+        enemy_get_hitbox_left(),
+        enemy_get_hitbox_top(),
+        enemy_get_hitbox_right(),
+        enemy_get_hitbox_bottom(),
+        true
+    );
+
+    draw_set_alpha(1);
 }
 
 function enemy_update_animation()
@@ -148,16 +265,16 @@ function enemy_set_idle_animation()
     animTick = 0;
 }
 
-function enemy_set_cast_animation(_lane)
+function enemy_set_cast_animation(_pose)
 {
     isCasting = true;
-    castLane = _lane;
+    castPose = _pose;
 
-    if (_lane == SpellLane.LOW)
+    if (_pose == SpellLane.LOW)
     {
         drawSprite = sprCastLow;
     }
-    else if (_lane == SpellLane.MIDDLE)
+    else if (_pose == SpellLane.MIDDLE)
     {
         drawSprite = sprCastMid;
     }
@@ -179,9 +296,8 @@ function enemy_choose_random_spell()
 {
     var _spellPower = irandom(2);
     var _spellElement = irandom(2);
-    var _spellLane = irandom(2);
 
-    return new SpellData(_spellPower, _spellElement, _spellLane);
+    return new SpellData(_spellPower, _spellElement);
 }
 
 function enemy_cast_spell(_spellInfo)
@@ -191,10 +307,13 @@ function enemy_cast_spell(_spellInfo)
         return;
     }
 
-    enemy_set_cast_animation(_spellInfo.spellLane);
-
     var _spawnX = x + (facing * 56);
-    var _spawnY = spell_get_lane_y(_spellInfo.spellLane);
+
+    // enemy fires from current height too
+    var _spawnY = y - 8;
+
+    var _pose = cast_pose_from_y(_spawnY);
+    enemy_set_cast_animation(_pose);
 
     spell_spawn(id, _spellInfo, _spawnX, _spawnY, facing);
 

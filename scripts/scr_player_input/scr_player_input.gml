@@ -1,14 +1,17 @@
 // charge-based spell input
-// left/right cycle element
-// up/down changes lane
-// space charges, releasing space casts
+// A/D cycle element
+// K charges, releasing K casts
+// W/S movement and space jump live in player logic
 
 function player_input_create()
 {
     // current spell setup
-    // player changes these before charging
+    // player changes this before charging
     selectedElement = SpellElement.FIRE;
-    selectedLane = SpellLane.MIDDLE;
+
+    // cast key
+    // change this one line if the key needs to move again
+    castKey = ord("K");
 
     // charge state
     isCharging = false;
@@ -41,47 +44,32 @@ function player_input_step()
         playerCastCooldownTimer -= 1;
     }
 
-    // dont change element/lane while charging
-    // keeps the spell choice locked once space is held
-    if (!isCharging)
+    // element can change at any time
+    // lets player switch element while holding a charged spell
+    if (keyboard_check_pressed(ord("A")))
     {
-        // cycle element
-        if (keyboard_check_pressed(vk_left))
-        {
-            player_input_cycle_element(-1);
-        }
+        player_input_cycle_element(-1);
+    }
 
-        if (keyboard_check_pressed(vk_right))
-        {
-            player_input_cycle_element(1);
-        }
-
-        // change lane
-        if (keyboard_check_pressed(vk_up))
-        {
-            player_input_move_lane(1);
-        }
-
-        if (keyboard_check_pressed(vk_down))
-        {
-            player_input_move_lane(-1);
-        }
+    if (keyboard_check_pressed(ord("D")))
+    {
+        player_input_cycle_element(1);
     }
 
     // start charge
-    if (keyboard_check_pressed(vk_space))
+    if (keyboard_check_pressed(castKey))
     {
         player_input_start_charge();
     }
 
-    // keep charging while space is held
-    if (isCharging && keyboard_check(vk_space))
+    // keep charging while K is held
+    if (isCharging && keyboard_check(castKey))
     {
         player_input_update_charge();
     }
 
     // release to cast
-    if (isCharging && keyboard_check_released(vk_space))
+    if (isCharging && keyboard_check_released(castKey))
     {
         player_input_release_charge();
     }
@@ -114,7 +102,6 @@ function player_input_update_charge()
 
 function player_input_release_charge()
 {
-    // if cooldown somehow starts, cancel safely
     if (playerCastCooldownTimer > 0)
     {
         isCharging = false;
@@ -123,16 +110,18 @@ function player_input_release_charge()
     }
 
     var _spellPower = player_input_power_from_charge();
-    var _spellInfo = new SpellData(_spellPower, selectedElement, selectedLane);
+    var _spellInfo = new SpellData(_spellPower, selectedElement);
 
-	// cast function handles mana checking
-	player_cast_spell(_spellInfo);
+    var _didCast = player_cast_spell(_spellInfo);
 
-	isCharging = false;
-	chargeFrames = 0;
+    isCharging = false;
+    chargeFrames = 0;
 
-	// small input cooldown either way so space cant machine-gun
-	playerCastCooldownTimer = playerCastCooldownTime;
+    // small input cooldown only if a spell actually fired
+    if (_didCast)
+    {
+        playerCastCooldownTimer = playerCastCooldownTime;
+    }
 }
 
 function player_input_power_from_charge()
@@ -151,22 +140,6 @@ function player_input_power_from_charge()
 
     // full charge
     return SpellPower.STRONG;
-}
-
-function player_input_move_lane(_direction)
-{
-    selectedLane += _direction;
-
-    // enum order is low = 0, middle = 1, high = 2
-    if (selectedLane < SpellLane.LOW)
-    {
-        selectedLane = SpellLane.LOW;
-    }
-
-    if (selectedLane > SpellLane.HIGH)
-    {
-        selectedLane = SpellLane.HIGH;
-    }
 }
 
 function player_input_cycle_element(_direction)
@@ -210,8 +183,6 @@ function player_input_status_text()
     }
 
     return spell_element_to_text(selectedElement)
-        + " | "
-        + spell_lane_to_text(selectedLane)
         + " | "
         + _powerText;
 }

@@ -43,19 +43,20 @@ function ui_draw_main_menu()
     draw_set_halign(fa_center);
     draw_set_colour(c_white);
 
-    draw_text(_guiW * 0.5, 160, "THE VACANT SPIRE");
-    draw_text(_guiW * 0.5, 200, "Reclaim your tower and serve the necromancer with legal nonsense!");
-	draw_text(_guiW * 0.5, 220, "Controls:");
-	draw_text(_guiW * 0.5, 240, "Left / Right = Change Element");
-	draw_text(_guiW * 0.5, 260, "Up / Down = Change spell cast lane");
-	draw_text(_guiW * 0.5, 280, "Hold space = Charge your spell");
-	draw_text(_guiW * 0.5, 300, "Release space = Cast");
-	draw_text(_guiW * 0.5, 320, "Fire beats air");
-	draw_text(_guiW * 0.5, 340, "Air beats water");
-	draw_text(_guiW * 0.5, 360, "Water beats fire");
+    draw_text(_guiW * 0.5, 140, "THE VACANT SPIRE");
+    draw_text(_guiW * 0.5, 180, "Reclaim your tower and serve the necromancer with legal nonsense!");
+
+    draw_text(_guiW * 0.5, 230, "Controls:");
+    draw_text(_guiW * 0.5, 255, "W / S = Move up and down");
+    draw_text(_guiW * 0.5, 280, "Space = Jump / Double Jump");
+    draw_text(_guiW * 0.5, 305, "A / D = Change element");
+    draw_text(_guiW * 0.5, 330, "Hold K = Charge spell");
+    draw_text(_guiW * 0.5, 355, "Release K = Cast");
+
+    draw_text(_guiW * 0.5, 400, "Fire beats Air   |   Air beats Water   |   Water beats Fire");
 
     // We can replace this with buttons later
-    draw_text(_guiW * 0.5, 400, "Press Enter or Space to Start");
+    draw_text(_guiW * 0.5, 455, "Press Enter or Space to Start");
 
     draw_set_halign(fa_left);
 }
@@ -91,15 +92,15 @@ function ui_draw_battle_hud()
             ui_draw_health_bar(_playerBarX, _barY, _barW, _barH, global.player.currentHealth, global.player.maxHealth, "Player", false);
         }
     }
-	
-	// player mana bar
-	if (instance_exists(global.player))
-	{
-		if (variable_instance_exists(global.player, "currentMana") && variable_instance_exists(global.player, "maxMana"))
-		{
-			ui_draw_mana_bar(_playerBarX, _barY + 44, _barW, 14, global.player.currentMana, global.player.maxMana, "Mana");
-		}
-	}
+
+    // player mana bar
+    if (instance_exists(global.player))
+    {
+        if (variable_instance_exists(global.player, "currentMana") && variable_instance_exists(global.player, "maxMana"))
+        {
+            ui_draw_mana_bar(_playerBarX, _barY + 44, _barW, 14, global.player.currentMana, global.player.maxMana, "Mana");
+        }
+    }
 
     // enemy health bar
     if (instance_exists(global.enemy))
@@ -118,7 +119,7 @@ function ui_draw_spell_controls()
     var _guiW = display_get_gui_width();
     var _guiH = display_get_gui_height();
 
-    var _boxW = 560;
+    var _boxW = 620;
     var _boxH = 122;
     var _boxX = (_guiW - _boxW) * 0.5;
     var _boxY = _guiH - _boxH - 24;
@@ -136,7 +137,7 @@ function ui_draw_spell_controls()
     draw_set_valign(fa_top);
 
     // quick controls reminder
-    draw_text(_guiW * 0.5, _boxY + 12, "Left/Right: Element     Up/Down: Lane     Space: Charge");
+    draw_text(_guiW * 0.5, _boxY + 12, "W/S: Move     Space: Jump     A/D: Element     Hold K: Charge");
 
     // current spell setup
     draw_text(_guiW * 0.5, _boxY + 40, "Spell: " + string(global.inputText));

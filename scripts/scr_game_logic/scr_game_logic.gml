@@ -2,10 +2,10 @@
 
 function game_create()
 {
-    // Store shared prototype settings globally so all systems can read them
+    // Store shared game settings globally so all systems can read them
     global.config = new PrototypeConfig();
 
-	// general game information and stats, pretty self explanatory
+    // general game information and stats, pretty self explanatory
     global.gameState = GameState.MENU;
     global.currentFloor = 1;
     global.player = noone;
@@ -14,15 +14,15 @@ function game_create()
     // Simple debug line
     // see what the game controller is doing
     global.debugText = "Game ready";
-	
-	// shows the current arrow key input on the HUD
-	global.inputText = "";
+
+    // shows the current spell setup on the HUD
+    global.inputText = "";
 }
 
 function game_step()
 {
     // Only one state should run each frame to avoid conflicts
-	// with game being paused and played at the same time
+    // with game being paused and played at the same time
     switch (global.gameState)
     {
         case GameState.MENU:
@@ -46,7 +46,7 @@ function game_step()
 
 function game_step_menu()
 {
-    // For prototype menu only needs to start
+    // menu only needs to start for now
     if (keyboard_check_pressed(vk_enter) || keyboard_check_pressed(vk_space))
     {
         game_start_new_run();
@@ -62,15 +62,14 @@ function game_step_playing()
         return;
     }
 
-    // If the player gets removed count it as a loss
-    // if we get time add health but its fine for prototype
+    // if the player gets removed count it as a loss
     if (!instance_exists(global.player))
     {
         global.gameState = GameState.LOST;
         return;
     }
 
-    // same as player ^
+    // if the enemy gets removed count it as a win
     if (!instance_exists(global.enemy))
     {
         global.gameState = GameState.WON;
@@ -221,89 +220,9 @@ function game_draw_background()
 
 function game_draw_lanes()
 {
-    // lanes draw after the background so they stay visible
+    // not drawing lane/movement guide lines anymore
     if (global.gameState != GameState.PLAYING && global.gameState != GameState.PAUSED)
     {
         return;
     }
-
-    var _cfg = global.config;
-
-    // small side padding
-    var _leftX = 80;
-    var _rightX = room_width - 80;
-
-    // default to middle if the player is missing for some reason
-    var _selectedLane = SpellLane.MIDDLE;
-
-    if (instance_exists(global.player))
-    {
-        if (variable_instance_exists(global.player, "selectedLane"))
-        {
-            _selectedLane = global.player.selectedLane;
-        }
-    }
-
-    // dim lane lines first
-    draw_set_alpha(0.25);
-    draw_set_colour(c_white);
-
-    draw_line(_leftX, _cfg.laneHighY, _rightX, _cfg.laneHighY);
-    draw_line(_leftX, _cfg.laneMiddleY, _rightX, _cfg.laneMiddleY);
-    draw_line(_leftX, _cfg.laneLowY, _rightX, _cfg.laneLowY);
-
-    draw_set_alpha(1);
-
-    // draw selected lane on top
-    // makes it way easier to see where the next spell will cast
-    var _laneY = _cfg.laneMiddleY;
-
-    if (_selectedLane == SpellLane.LOW)
-    {
-        _laneY = _cfg.laneLowY;
-    }
-    else if (_selectedLane == SpellLane.HIGH)
-    {
-        _laneY = _cfg.laneHighY;
-    }
-
-    // glow ish selected lane
-    draw_set_alpha(0.18);
-    draw_set_colour(game_get_selected_element_colour());
-    draw_rectangle(_leftX, _laneY - 28, _rightX, _laneY + 28, false);
-
-    draw_set_alpha(0.9);
-    draw_set_colour(game_get_selected_element_colour());
-    draw_line_width(_leftX, _laneY, _rightX, _laneY, 4);
-
-    draw_set_alpha(1);
-    draw_set_colour(c_white);
-}
-
-function game_get_selected_element_colour()
-{
-    // fallback colour if player/input is not ready
-    var _colour = make_colour_rgb(120, 220, 255);
-
-    if (!instance_exists(global.player))
-    {
-        return _colour;
-    }
-
-    if (!variable_instance_exists(global.player, "selectedElement"))
-    {
-        return _colour;
-    }
-
-    if (global.player.selectedElement == SpellElement.FIRE)
-    {
-        return make_colour_rgb(255, 90, 30);
-    }
-
-    if (global.player.selectedElement == SpellElement.WATER)
-    {
-        return make_colour_rgb(60, 150, 255);
-    }
-
-    return make_colour_rgb(220, 240, 255);
 }

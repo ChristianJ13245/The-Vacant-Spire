@@ -1,13 +1,11 @@
-// basic player setup and player behaviour.
-// input will be added in a later commit
+// basic player setup and player behaviour
 
 function player_create()
 {
-    // Basic values for prototype
+    // Basic values
     maxHealth = 100;
     currentHealth = maxHealth;
     isDead = false;
-    hitRadius = 42;
     displayName = "Player";
 
     // facing 1 means cast from left to right
@@ -15,27 +13,50 @@ function player_create()
 
     // Placeholder until proper 32x32 art is imported
     bodyColour = make_colour_rgb(80, 180, 255);
-	
+
+    // movement
+    moveSpeed = 5;
+    minY = global.config.arenaTopY;
+    maxY = global.config.arenaBottomY;
+
+    // jump state
+    // y is the ground/body position, jumpOffset moves drawn sprite and hitbox up
+    isJumping = false;
+    jumpOffset = 0;
+    jumpVelocity = 0;
+    jumpGravity = 0.8;
+    jumpStrength = -13;
+
+    // double jump
+    // maxJumpCount = 2 means normal jump + one extra jump in the air
+    jumpCount = 0;
+    maxJumpCount = 2;
+
     // quick cast animation
     castTimer = 0;
-    castLane = SpellLane.MIDDLE;
-	
-	// mana stops the player from spamming spells forever
-	maxMana = 100;
-	currentMana = maxMana;
+    castPose = SpellLane.MIDDLE;
 
-	// mana regen
-	// regenDelay stops mana coming back instantly after casting
-	manaRegenAmount = 0.75;
-	manaRegenDelay = room_speed * 0.6;
-	manaRegenTimer = 0;
+    // mana stops the player from spamming spells forever
+    maxMana = 100;
+    currentMana = maxMana;
+
+    // mana regen
+    // regenDelay stops mana coming back instantly after casting
+    manaRegenAmount = 0.75;
+    manaRegenDelay = room_speed * 0.6;
+    manaRegenTimer = 0;
+
+    // mana burnout
+    // if player tries to cast with not enough mana, regen pauses for a bit
+    manaEmptyCooldownTime = room_speed * 1.2;
+    manaEmptyCooldownTimer = 0;
 
     // animation values we control ourselves
     drawSprite = -1;
     drawFrame = 0;
     animTick = 0;
-	image_speed = 0;
-	image_index = 0;
+    image_speed = 0;
+    image_index = 0;
 
     // higher number = slower animation
     idleFrameDelay = 8;
@@ -52,19 +73,22 @@ function player_create()
     drawFrame = 0;
     animTick = 0;
 
-    // starts arrow inputs
+    // starts spell input
     player_input_create();
 }
 
 function player_step()
 {
-    // Do nothing while paused or in menus
     if (global.gameState != GameState.PLAYING)
     {
         return;
     }
-	
-    // reads arrow keys 
+
+    // movement and jump first so casting uses current position
+    player_move_vertical();
+    player_update_jump();
+
+    // spell input
     player_input_step();
 
     player_update_animation();
@@ -78,39 +102,84 @@ function player_step()
             player_set_idle_animation();
         }
     }
-	
-	// bring mana back over time
-	player_update_mana();
 
-    // when health reaches 0, remove the player
-    // game controller detects this and triggers the lose state
+    // bring mana back over time
+    player_update_mana();
+
     if (currentHealth <= 0 && !isDead)
     {
         player_die();
     }
 }
 
+function player_move_vertical()
+{
+    if (keyboard_check(ord("W")))
+    {
+        y -= moveSpeed;
+    }
+
+    if (keyboard_check(ord("S")))
+    {
+        y += moveSpeed;
+    }
+
+    y = clamp(y, minY, maxY);
+}
+
+function player_update_jump()
+{
+    // space jumps if we still have jumps left
+    if (keyboard_check_pressed(vk_space) && jumpCount < maxJumpCount)
+    {
+        isJumping = true;
+        jumpVelocity = jumpStrength;
+        jumpCount += 1;
+    }
+
+    if (isJumping)
+    {
+        jumpOffset += jumpVelocity;
+        jumpVelocity += jumpGravity;
+
+        // landed
+        if (jumpOffset >= 0)
+        {
+            jumpOffset = 0;
+            jumpVelocity = 0;
+            isJumping = false;
+
+            // refresh jumps when we touch ground again
+            jumpCount = 0;
+        }
+    }
+}
+
 function player_draw()
 {
     var _spr = drawSprite;
+    var _drawY = player_get_draw_y();
+    var _scale = player_get_depth_scale();
 
     if (_spr != -1)
     {
         // aura behind player
-        player_draw_aura(_spr);
+        player_draw_aura(_spr, _drawY, _scale);
 
         // normal player sprite
-        // drawFrame is our controlled animation frame
-        draw_sprite_ext(_spr, drawFrame, x, y, 3, 3, 0, c_white, 1);
+        draw_sprite_ext(_spr, drawFrame, x, _drawY, 3 * _scale, 3 * _scale, 0, c_white, 1);
     }
     else
     {
         draw_set_colour(bodyColour);
-        draw_rectangle(x - 32, y - 48, x + 32, y + 48, false);
+        draw_rectangle(x - 32, _drawY - 48, x + 32, _drawY + 48, false);
     }
+
+    // uncomment while tuning hitboxes
+    // player_draw_debug_hitbox();
 }
 
-function player_draw_aura(_spr)
+function player_draw_aura(_spr, _drawY, _scaleAmount)
 {
     if (_spr == -1)
     {
@@ -128,26 +197,115 @@ function player_draw_aura(_spr)
     // ignores basically transparent pixels
     shader_set_uniform_f(_cutoffUniform, 0.05);
 
-    var _scale = 3;
-    var _offset = 4;
+    var _scale = 3 * _scaleAmount;
+    var _offset = 4 * _scaleAmount;
 
     // draw tinted copies around the player
-    // normal sprite gets drawn after this, so this sits behind them
-    draw_sprite_ext(_spr, drawFrame, x - _offset, y, _scale, _scale, 0, c_white, 1);
-    draw_sprite_ext(_spr, drawFrame, x + _offset, y, _scale, _scale, 0, c_white, 1);
-    draw_sprite_ext(_spr, drawFrame, x, y - _offset, _scale, _scale, 0, c_white, 1);
-    draw_sprite_ext(_spr, drawFrame, x, y + _offset, _scale, _scale, 0, c_white, 1);
-
-    draw_sprite_ext(_spr, drawFrame, x - 3, y - 3, _scale, _scale, 0, c_white, 1);
-    draw_sprite_ext(_spr, drawFrame, x + 3, y - 3, _scale, _scale, 0, c_white, 1);
-    draw_sprite_ext(_spr, drawFrame, x - 3, y + 3, _scale, _scale, 0, c_white, 1);
-    draw_sprite_ext(_spr, drawFrame, x + 3, y + 3, _scale, _scale, 0, c_white, 1);
+    draw_sprite_ext(_spr, drawFrame, x - _offset, _drawY, _scale, _scale, 0, c_white, 1);
+    draw_sprite_ext(_spr, drawFrame, x + _offset, _drawY, _scale, _scale, 0, c_white, 1);
+    draw_sprite_ext(_spr, drawFrame, x, _drawY - _offset, _scale, _scale, 0, c_white, 1);
+    draw_sprite_ext(_spr, drawFrame, x, _drawY + _offset, _scale, _scale, 0, c_white, 1);
 
     shader_reset();
 }
 
+function player_get_draw_y()
+{
+    return y + jumpOffset;
+}
+
+function player_get_depth_scale()
+{
+    return depth_scale_from_y(y);
+}
+
+function player_get_hitbox_scale()
+{
+    return 3 * player_get_depth_scale();
+}
+
+// sprite bbox based hitbox
+// uses the current sprite mask/bbox instead of hardcoded body size
+function player_get_hitbox_left()
+{
+    if (drawSprite == -1)
+    {
+        return x - 32;
+    }
+
+    var _scale = player_get_hitbox_scale();
+    var _originX = sprite_get_xoffset(drawSprite);
+    var _bboxLeft = sprite_get_bbox_left(drawSprite);
+
+    return x + ((_bboxLeft - _originX) * _scale);
+}
+
+function player_get_hitbox_right()
+{
+    if (drawSprite == -1)
+    {
+        return x + 32;
+    }
+
+    var _scale = player_get_hitbox_scale();
+    var _originX = sprite_get_xoffset(drawSprite);
+    var _bboxRight = sprite_get_bbox_right(drawSprite);
+
+    return x + ((_bboxRight - _originX) * _scale);
+}
+
+function player_get_hitbox_top()
+{
+    if (drawSprite == -1)
+    {
+        return player_get_draw_y() - 48;
+    }
+
+    var _scale = player_get_hitbox_scale();
+    var _originY = sprite_get_yoffset(drawSprite);
+    var _bboxTop = sprite_get_bbox_top(drawSprite);
+
+    return player_get_draw_y() + ((_bboxTop - _originY) * _scale);
+}
+
+function player_get_hitbox_bottom()
+{
+    if (drawSprite == -1)
+    {
+        return player_get_draw_y() + 48;
+    }
+
+    var _scale = player_get_hitbox_scale();
+    var _originY = sprite_get_yoffset(drawSprite);
+    var _bboxBottom = sprite_get_bbox_bottom(drawSprite);
+
+    return player_get_draw_y() + ((_bboxBottom - _originY) * _scale);
+}
+
+function player_draw_debug_hitbox()
+{
+    draw_set_alpha(0.45);
+    draw_set_colour(c_lime);
+
+    draw_rectangle(
+        player_get_hitbox_left(),
+        player_get_hitbox_top(),
+        player_get_hitbox_right(),
+        player_get_hitbox_bottom(),
+        true
+    );
+
+    draw_set_alpha(1);
+}
+
 function player_update_mana()
 {
+    if (manaEmptyCooldownTimer > 0)
+    {
+        manaEmptyCooldownTimer -= 1;
+        return;
+    }
+
     if (manaRegenTimer > 0)
     {
         manaRegenTimer -= 1;
@@ -169,15 +327,15 @@ function player_get_spell_mana_cost(_spellPower)
 {
     if (_spellPower == SpellPower.QUICK)
     {
-        return 18;
+        return 22;
     }
 
     if (_spellPower == SpellPower.MEDIUM)
     {
-        return 35;
+        return 42;
     }
 
-    return 60;
+    return 70;
 }
 
 function player_has_enough_mana(_spellPower)
@@ -258,15 +416,15 @@ function player_set_idle_animation()
     animTick = 0;
 }
 
-function player_set_cast_animation(_lane)
+function player_set_cast_animation(_pose)
 {
-    castLane = _lane;
+    castPose = _pose;
 
-    if (_lane == SpellLane.LOW)
+    if (_pose == SpellLane.LOW)
     {
         drawSprite = sprCastLow;
     }
-    else if (_lane == SpellLane.MIDDLE)
+    else if (_pose == SpellLane.MIDDLE)
     {
         drawSprite = sprCastMid;
     }
@@ -284,47 +442,36 @@ function player_set_cast_animation(_lane)
     castTimer = (_frameCount * castFrameDelay) + 12;
 }
 
-function player_get_current_sprite()
-{
-    if (castTimer > 0)
-    {
-        if (castLane == SpellLane.LOW)
-        {
-            return sprCastLow;
-        }
-
-        if (castLane == SpellLane.MIDDLE)
-        {
-            return sprCastMid;
-        }
-
-        return sprCastHigh;
-    }
-
-    return sprIdle;
-}
-
 function player_cast_spell(_spellInfo)
 {
     if (global.gameState != GameState.PLAYING)
     {
-        return;
+        return false;
     }
 
-	if (!player_has_enough_mana(_spellInfo.spellPower))
-	{
-		global.debugText = "Not enough mana";
-		return;
-	}
+    if (!player_has_enough_mana(_spellInfo.spellPower))
+    {
+        manaEmptyCooldownTimer = manaEmptyCooldownTime;
+        global.debugText = "Not enough mana";
+        return false;
+    }
 
-player_spend_mana(_spellInfo.spellPower);
-
-    player_set_cast_animation(_spellInfo.spellLane);
+    player_spend_mana(_spellInfo.spellPower);
 
     var _spawnX = x + (facing * 56);
-    var _spawnY = spell_get_lane_y(_spellInfo.spellLane);
+
+    // spell fires from current drawn height now
+    // jumpOffset means jumping casts from the jumped position
+    var _spawnY = player_get_draw_y() - 8;
+
+    var _pose = cast_pose_from_y(_spawnY);
+    player_set_cast_animation(_pose);
 
     spell_spawn(id, _spellInfo, _spawnX, _spawnY, facing);
+
+    global.debugText = "Player cast " + spell_info_to_text(_spellInfo);
+
+    return true;
 }
 
 function player_die()
@@ -344,11 +491,11 @@ function player_take_damage(_amount)
 {
     currentHealth -= _amount;
 
-    // if you see this and dont understand why I did it, we dont want health to be negative ever 
+    // stop health going under 0
     if (currentHealth < 0)
     {
         currentHealth = 0;
     }
-	
+
     global.debugText = "Player took " + string(_amount) + " damage";
 }

@@ -2,7 +2,7 @@
 
 function spell_create()
 {
-	// who created the spell
+    // who created the spell
     owner = noone;
 
     // SpellData struct
@@ -10,7 +10,6 @@ function spell_create()
 
     spellPower = SpellPower.QUICK;
     spellElement = SpellElement.FIRE;
-    spellLane = SpellLane.MIDDLE;
 
     powerValue = 1;
 
@@ -23,10 +22,10 @@ function spell_create()
 
     // Spells should not do ANYTHING until properly spawned
     isInitialized = false;
-	
-	// animation
+
+    // animation
     image_index = 0;
-    image_speed = 1;
+    image_speed = 0.25;
 
     // sprites
     sprFire = asset_get_index("spr_spell_fire");
@@ -45,19 +44,18 @@ function spell_spawn(_owner, _spellInfo, _x, _y, _direction)
 
         spellPower = _spellInfo.spellPower;
         spellElement = _spellInfo.spellElement;
-        spellLane = _spellInfo.spellLane;
 
         powerValue = _spellInfo.powerValue;
 
         moveDirection = _direction;
 
         x = _x;
-        y = spell_get_lane_y(spellLane);
+        y = _y;
 
         // pick the right spell sprite
         sprite_index = spell_get_sprite();
         image_index = 0;
-        image_speed = 0.35;
+        image_speed = 0.25;
 
         spell_refresh_stats_from_power(id);
 
@@ -111,16 +109,7 @@ function spell_draw()
 
     if (_spr != -1)
     {
-        var _scale = 1;
-		
-        if (powerValue == 2)
-        {
-            _scale = 1.25;
-        }
-        else if (powerValue >= 3)
-        {
-            _scale = 1.5;
-        }
+        var _scale = spell_get_draw_scale();
 
         // flips enemy spells after the final scale is chosen
         var _xScale = _scale * moveDirection;
@@ -132,6 +121,25 @@ function spell_draw()
         draw_set_colour(spell_get_colour());
         draw_circle(x, y, radius, false);
     }
+
+    // uncomment while tuning spell collision
+    // spell_draw_debug_hitbox();
+}
+
+function spell_get_draw_scale()
+{
+    var _scale = 1;
+
+    if (powerValue == 2)
+    {
+        _scale = 1.25;
+    }
+    else if (powerValue >= 3)
+    {
+        _scale = 1.5;
+    }
+
+    return _scale;
 }
 
 function spell_get_sprite()
@@ -164,19 +172,167 @@ function spell_get_colour()
     return make_colour_rgb(220, 240, 255);
 }
 
-function spell_get_lane_y(_lane)
+function spell_get_instance_hit_radius(_spellInst)
 {
-    if (_lane == SpellLane.LOW)
+    if (!instance_exists(_spellInst))
     {
-        return global.config.laneLowY;
+        return 8;
     }
 
-    if (_lane == SpellLane.MIDDLE)
+    var _spr = -1;
+
+    if (_spellInst.spellElement == SpellElement.FIRE)
     {
-        return global.config.laneMiddleY;
+        _spr = _spellInst.sprFire;
+    }
+    else if (_spellInst.spellElement == SpellElement.WATER)
+    {
+        _spr = _spellInst.sprWater;
+    }
+    else
+    {
+        _spr = _spellInst.sprAir;
     }
 
-    return global.config.laneHighY;
+    if (_spr == -1)
+    {
+        return _spellInst.radius;
+    }
+
+    var _bboxW = sprite_get_bbox_right(_spr) - sprite_get_bbox_left(_spr);
+    var _bboxH = sprite_get_bbox_bottom(_spr) - sprite_get_bbox_top(_spr);
+
+    var _largest = _bboxW;
+
+    if (_bboxH > _largest)
+    {
+        _largest = _bboxH;
+    }
+
+    var _scale = 1;
+
+    if (_spellInst.powerValue == 2)
+    {
+        _scale = 1.25;
+    }
+    else if (_spellInst.powerValue >= 3)
+    {
+        _scale = 1.5;
+    }
+
+    return (_largest * _scale) * 0.5;
+}
+
+function spell_get_instance_bbox_left(_inst)
+{
+    if (!instance_exists(_inst))
+    {
+        return 0;
+    }
+
+    if (!variable_instance_exists(_inst, "drawSprite"))
+    {
+        return _inst.x - 32;
+    }
+
+    if (_inst.drawSprite == -1)
+    {
+        return _inst.x - 32;
+    }
+
+    var _scale = 3 * depth_scale_from_y(_inst.y);
+    var _originX = sprite_get_xoffset(_inst.drawSprite);
+    var _bboxLeft = sprite_get_bbox_left(_inst.drawSprite);
+
+    return _inst.x + ((_bboxLeft - _originX) * _scale);
+}
+
+function spell_get_instance_bbox_right(_inst)
+{
+    if (!instance_exists(_inst))
+    {
+        return 0;
+    }
+
+    if (!variable_instance_exists(_inst, "drawSprite"))
+    {
+        return _inst.x + 32;
+    }
+
+    if (_inst.drawSprite == -1)
+    {
+        return _inst.x + 32;
+    }
+
+    var _scale = 3 * depth_scale_from_y(_inst.y);
+    var _originX = sprite_get_xoffset(_inst.drawSprite);
+    var _bboxRight = sprite_get_bbox_right(_inst.drawSprite);
+
+    return _inst.x + ((_bboxRight - _originX) * _scale);
+}
+
+function spell_get_instance_bbox_top(_inst)
+{
+    if (!instance_exists(_inst))
+    {
+        return 0;
+    }
+
+    var _drawY = _inst.y;
+
+    // player jump moves the drawn sprite and hitbox up
+    if (variable_instance_exists(_inst, "jumpOffset"))
+    {
+        _drawY += _inst.jumpOffset;
+    }
+
+    if (!variable_instance_exists(_inst, "drawSprite"))
+    {
+        return _drawY - 48;
+    }
+
+    if (_inst.drawSprite == -1)
+    {
+        return _drawY - 48;
+    }
+
+    var _scale = 3 * depth_scale_from_y(_inst.y);
+    var _originY = sprite_get_yoffset(_inst.drawSprite);
+    var _bboxTop = sprite_get_bbox_top(_inst.drawSprite);
+
+    return _drawY + ((_bboxTop - _originY) * _scale);
+}
+
+function spell_get_instance_bbox_bottom(_inst)
+{
+    if (!instance_exists(_inst))
+    {
+        return 0;
+    }
+
+    var _drawY = _inst.y;
+
+    // player jump moves the drawn sprite and hitbox up
+    if (variable_instance_exists(_inst, "jumpOffset"))
+    {
+        _drawY += _inst.jumpOffset;
+    }
+
+    if (!variable_instance_exists(_inst, "drawSprite"))
+    {
+        return _drawY + 48;
+    }
+
+    if (_inst.drawSprite == -1)
+    {
+        return _drawY + 48;
+    }
+
+    var _scale = 3 * depth_scale_from_y(_inst.y);
+    var _originY = sprite_get_yoffset(_inst.drawSprite);
+    var _bboxBottom = sprite_get_bbox_bottom(_inst.drawSprite);
+
+    return _drawY + ((_bboxBottom - _originY) * _scale);
 }
 
 function spell_check_wizard_hit()
@@ -203,20 +359,14 @@ function spell_check_wizard_hit()
         return;
     }
 
-    // quick prototype hit check
-	// lanes are for spell clashes, not wizard hitboxes
-    var _hitWizard = false;
+    var _left = spell_get_instance_bbox_left(_target);
+    var _right = spell_get_instance_bbox_right(_target);
+    var _top = spell_get_instance_bbox_top(_target);
+    var _bottom = spell_get_instance_bbox_bottom(_target);
 
-    if (moveDirection > 0 && x >= _target.x - 36)
-    {
-        _hitWizard = true;
-    }
-    else if (moveDirection < 0 && x <= _target.x + 36)
-    {
-        _hitWizard = true;
-    }
+    var _hitRadius = spell_get_instance_hit_radius(id);
 
-    if (_hitWizard)
+    if (spell_rect_circle_overlap(_left, _top, _right, _bottom, x, y, _hitRadius))
     {
         if (_target == global.player)
         {
@@ -243,74 +393,56 @@ function spell_check_spell_collision()
 
     with (obj_spell)
     {
-        if (id == _self)
+        if (id != _self)
         {
-            continue;
-        }
-
-        if (!instance_exists(_self))
-        {
-            continue;
-        }
-
-        if (!isInitialized || !_self.isInitialized)
-        {
-            continue;
-        }
-
-        if (owner == _self.owner)
-        {
-            continue;
-        }
-
-        if (spellLane != _self.spellLane)
-        {
-            continue;
-        }
-
-        if (abs(x - _self.x) > radius + _self.radius)
-        {
-            continue;
-        }
-
-        var _result = spell_resolve_collision(_self, id);
-
-        if (_result == 0)
-        {
-            // both spells cancel
-            with (_self)
+            if (instance_exists(_self))
             {
-                instance_destroy();
-            }
+                if (isInitialized && _self.isInitialized)
+                {
+                    if (owner != _self.owner)
+                    {
+                        var _dist = point_distance(x, y, _self.x, _self.y);
+                        var _selfRadius = spell_get_instance_hit_radius(_self);
+                        var _otherRadius = spell_get_instance_hit_radius(id);
 
-            instance_destroy();
-        }
-        else if (_result == 1)
-        {
-            // first spell wins, this spell loses
-            instance_destroy();
-        }
-        else if (_result == 2)
-        {
-            // this spell wins, first spell loses
-            with (_self)
-            {
-                instance_destroy();
+                        if (_dist <= _selfRadius + _otherRadius)
+                        {
+                            var _result = spell_resolve_collision(_self, id);
+
+                            if (_result == 0)
+                            {
+                                // both spells cancel
+                                with (_self)
+                                {
+                                    instance_destroy();
+                                }
+
+                                instance_destroy();
+                            }
+                            else if (_result == 1)
+                            {
+                                // first spell wins, this spell loses
+                                instance_destroy();
+                            }
+                            else if (_result == 2)
+                            {
+                                // this spell wins, first spell loses
+                                with (_self)
+                                {
+                                    instance_destroy();
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
-
-        break;
     }
 }
 
 function spell_resolve_collision(_spellA, _spellB)
 {
     if (!instance_exists(_spellA) || !instance_exists(_spellB))
-    {
-        return -1;
-    }
-
-    if (_spellA.spellLane != _spellB.spellLane)
     {
         return -1;
     }
@@ -438,17 +570,33 @@ function spell_refresh_stats_from_power(_spell)
 
         moveSpeed = _stats.speed;
         damage = _stats.damage;
+
+        // fallback radius, real hit radius comes from sprite bbox when possible
         radius = _stats.radius;
     }
+}
+
+function spell_rect_circle_overlap(_left, _top, _right, _bottom, _cx, _cy, _radius)
+{
+    var _closestX = clamp(_cx, _left, _right);
+    var _closestY = clamp(_cy, _top, _bottom);
+
+    return point_distance(_cx, _cy, _closestX, _closestY) <= _radius;
+}
+
+function spell_draw_debug_hitbox()
+{
+    draw_set_alpha(0.45);
+    draw_set_colour(c_yellow);
+    draw_circle(x, y, spell_get_instance_hit_radius(id), true);
+    draw_set_alpha(1);
 }
 
 function spell_info_to_text(_spellInfo)
 {
     return spell_power_to_text(_spellInfo.spellPower)
         + " "
-        + spell_element_to_text(_spellInfo.spellElement)
-        + " "
-        + spell_lane_to_text(_spellInfo.spellLane);
+        + spell_element_to_text(_spellInfo.spellElement);
 }
 
 function spell_power_to_text(_spellPower)
