@@ -4,8 +4,10 @@
 enum GameState
 {
     MENU,
+    HELP,
     PLAYING,
     PAUSED,
+    PAUSE_HELP,
     WON,
     LOST
 }

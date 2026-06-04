@@ -12,6 +12,10 @@ function ui_draw()
             ui_draw_main_menu();
         break;
 
+        case GameState.HELP:
+            ui_draw_help_screen(GameState.MENU);
+        break;
+
         case GameState.PLAYING:
             ui_draw_battle_hud();
         break;
@@ -21,14 +25,67 @@ function ui_draw()
             ui_draw_pause_menu();
         break;
 
+        case GameState.PAUSE_HELP:
+            ui_draw_battle_hud();
+            ui_draw_help_screen(GameState.PAUSED);
+        break;
+
         case GameState.WON:
-            ui_draw_center_message("You win!", "Press R to restart or M for menu");
+            ui_draw_end_menu("You win!");
         break;
 
         case GameState.LOST:
-            ui_draw_center_message("You LOST, GET OUTTA HERE!", "Press R to restart or M for menu");
+            ui_draw_end_menu("You LOST, GET OUTTA HERE!");
         break;
     }
+}
+
+function ui_mouse_in_rect(_x, _y, _w, _h)
+{
+    var _mx = device_mouse_x_to_gui(0);
+    var _my = device_mouse_y_to_gui(0);
+
+    return (_mx >= _x && _mx <= _x + _w && _my >= _y && _my <= _y + _h);
+}
+
+function ui_button_clicked(_x, _y, _w, _h)
+{
+    return ui_mouse_in_rect(_x, _y, _w, _h) && mouse_check_button_pressed(mb_left);
+}
+
+function ui_button(_x, _y, _w, _h, _label)
+{
+    var _hover = ui_mouse_in_rect(_x, _y, _w, _h);
+
+    if (_hover)
+    {
+        draw_set_colour(make_colour_rgb(72, 72, 92));
+    }
+    else
+    {
+        draw_set_colour(make_colour_rgb(34, 34, 44));
+    }
+
+    draw_rectangle(_x, _y, _x + _w, _y + _h, false);
+
+    if (_hover)
+    {
+        draw_set_colour(c_yellow);
+    }
+    else
+    {
+        draw_set_colour(c_white);
+    }
+
+    draw_rectangle(_x, _y, _x + _w, _y + _h, true);
+
+    draw_set_halign(fa_center);
+    draw_set_valign(fa_middle);
+    draw_text(_x + (_w * 0.5), _y + (_h * 0.5), _label);
+    draw_set_halign(fa_left);
+    draw_set_valign(fa_top);
+
+    return _hover && mouse_check_button_pressed(mb_left);
 }
 
 function ui_draw_main_menu()
@@ -46,17 +103,54 @@ function ui_draw_main_menu()
     draw_text(_guiW * 0.5, 140, "THE VACANT SPIRE");
     draw_text(_guiW * 0.5, 180, "Reclaim your tower and serve the necromancer with legal nonsense!");
 
-    draw_text(_guiW * 0.5, 230, "Controls:");
-    draw_text(_guiW * 0.5, 255, "W / S = Move up and down");
-    draw_text(_guiW * 0.5, 280, "Space = Jump / Double Jump");
-    draw_text(_guiW * 0.5, 305, "A / D = Change element");
-    draw_text(_guiW * 0.5, 330, "Hold K = Charge spell");
-    draw_text(_guiW * 0.5, 355, "Release K = Cast");
+    var _buttonW = 240;
+    var _buttonH = 52;
+    var _buttonX = (_guiW - _buttonW) * 0.5;
+    var _buttonY = 310;
+    var _gap = 16;
 
-    draw_text(_guiW * 0.5, 400, "Fire beats Air   |   Air beats Water   |   Water beats Fire");
+    ui_button(_buttonX, _buttonY, _buttonW, _buttonH, "Play");
+    ui_button(_buttonX, _buttonY + (_buttonH + _gap), _buttonW, _buttonH, "Help");
+    ui_button(_buttonX, _buttonY + ((_buttonH + _gap) * 2), _buttonW, _buttonH, "Quit");
 
-    // We can replace this with buttons later
-    draw_text(_guiW * 0.5, 455, "Press Enter or Space to Start");
+    draw_set_halign(fa_left);
+}
+
+function ui_draw_help_screen(_backState)
+{
+    var _guiW = display_get_gui_width();
+    var _guiH = display_get_gui_height();
+
+    if (_backState == GameState.PAUSED)
+    {
+        // darker overlay when help opens from pause
+        draw_set_alpha(0.82);
+        draw_set_colour(c_black);
+        draw_rectangle(0, 0, _guiW, _guiH, false);
+        draw_set_alpha(1);
+    }
+    else
+    {
+        draw_set_colour(c_black);
+        draw_rectangle(0, 0, _guiW, _guiH, false);
+    }
+
+    ui_button(24, 24, 120, 38, "Back");
+
+    draw_set_halign(fa_center);
+    draw_set_colour(c_white);
+
+    draw_text(_guiW * 0.5, 115, "Help");
+    draw_text(_guiW * 0.5, 165, "Controls:");
+    draw_text(_guiW * 0.5, 190, "W / S = Move up and down");
+    draw_text(_guiW * 0.5, 215, "Space = Jump / Double Jump");
+    draw_text(_guiW * 0.5, 240, "A / D = Change element");
+    draw_text(_guiW * 0.5, 265, "Hold K = Charge spell");
+    draw_text(_guiW * 0.5, 290, "Release K = Cast");
+
+    draw_text(_guiW * 0.5, 350, "Fire beats Air   |   Air beats Water   |   Water beats Fire");
+    draw_text(_guiW * 0.5, 390, "Beat the enemy to climb the spire.");
+    draw_text(_guiW * 0.5, 420, "Esc pauses during battle.");
 
     draw_set_halign(fa_left);
 }
@@ -66,23 +160,33 @@ function ui_draw_battle_hud()
     var _guiW = display_get_gui_width();
 
     var _margin = 24;
-    var _topY = 24;
-    var _barY = 150;
+    var _barY = _margin + 20;
     var _middleGap = 280;
     var _barW = (_guiW - (_margin * 2) - _middleGap) * 0.5;
     var _barH = 24;
-
     // left bar starts from the left margin
     var _playerBarX = _margin;
 
     // right bar pushed in by same margin from the right side
     var _enemyBarX = _guiW - _margin - _barW;
+    var _gapStartX = _playerBarX + _barW;
+    var _gapEndX = _enemyBarX;
+    var _floorBoxW = 132;
+    var _floorBoxH = 36;
+    var _floorBoxX = ((_gapStartX + _gapEndX) * 0.5) - (_floorBoxW * 0.5);
+    var _floorBoxY = _barY + (_barH * 0.5) - (_floorBoxH * 0.5);
+
+    // little backing box so the floor text is readable on the wall
+    ui_draw_transparent_box(_floorBoxX, _floorBoxY, _floorBoxW, _floorBoxH);
 
     draw_set_colour(c_white);
 
-    // small info block on the left for now
-    draw_text(_margin, _topY, "Floor: " + string(global.currentFloor));
-    draw_text(_margin, _topY + 28, global.debugText);
+    // floor sits right between the health bars
+    draw_set_halign(fa_center);
+    draw_set_valign(fa_middle);
+    draw_text(_guiW * 0.5, _barY + (_barH * 0.5), "Floor: " + string(global.currentFloor));
+    draw_set_halign(fa_left);
+    draw_set_valign(fa_top);
 
     // player health bar
     if (instance_exists(global.player))
@@ -114,24 +218,29 @@ function ui_draw_battle_hud()
     ui_draw_spell_controls();
 }
 
+function ui_draw_transparent_box(_x, _y, _w, _h)
+{
+    draw_set_alpha(0.65);
+    draw_set_colour(c_black);
+    draw_rectangle(_x, _y, _x + _w, _y + _h, false);
+    draw_set_alpha(1);
+
+    draw_set_colour(c_white);
+    draw_rectangle(_x, _y, _x + _w, _y + _h, true);
+}
+
 function ui_draw_spell_controls()
 {
     var _guiW = display_get_gui_width();
     var _guiH = display_get_gui_height();
 
     var _boxW = 620;
-    var _boxH = 122;
+    var _boxH = 92;
     var _boxX = (_guiW - _boxW) * 0.5;
     var _boxY = _guiH - _boxH - 24;
 
     // bottom control box
-    draw_set_alpha(0.65);
-    draw_set_colour(c_black);
-    draw_rectangle(_boxX, _boxY, _boxX + _boxW, _boxY + _boxH, false);
-    draw_set_alpha(1);
-
-    draw_set_colour(c_white);
-    draw_rectangle(_boxX, _boxY, _boxX + _boxW, _boxY + _boxH, true);
+    ui_draw_transparent_box(_boxX, _boxY, _boxW, _boxH);
 
     draw_set_halign(fa_center);
     draw_set_valign(fa_top);
@@ -140,9 +249,9 @@ function ui_draw_spell_controls()
     draw_text(_guiW * 0.5, _boxY + 12, "W/S: Move     Space: Jump     A/D: Element     Hold K: Charge");
 
     // current spell setup
-    draw_text(_guiW * 0.5, _boxY + 40, "Spell: " + string(global.inputText));
+    draw_text(_guiW * 0.5, _boxY + 36, "Spell: " + string(global.inputText));
 
-    ui_draw_charge_bar(_boxX + 64, _boxY + 78, _boxW - 128, 18);
+    ui_draw_charge_bar(_boxX + 64, _boxY + 62, _boxW - 128, 18);
 
     draw_set_halign(fa_left);
     draw_set_valign(fa_top);
@@ -208,9 +317,17 @@ function ui_draw_pause_menu()
     draw_set_colour(c_white);
 
     draw_text(_guiW * 0.5, 220, "Paused");
-    draw_text(_guiW * 0.5, 280, "ESC: Resume");
-    draw_text(_guiW * 0.5, 320, "R: Restart Floor");
-    draw_text(_guiW * 0.5, 360, "M: Back To Menu");
+
+    var _buttonW = 240;
+    var _buttonH = 50;
+    var _buttonX = (_guiW - _buttonW) * 0.5;
+    var _buttonY = 280;
+    var _gap = 14;
+
+    ui_button(_buttonX, _buttonY, _buttonW, _buttonH, "Resume");
+    ui_button(_buttonX, _buttonY + (_buttonH + _gap), _buttonW, _buttonH, "Help");
+    ui_button(_buttonX, _buttonY + ((_buttonH + _gap) * 2), _buttonW, _buttonH, "Restart Floor");
+    ui_button(_buttonX, _buttonY + ((_buttonH + _gap) * 3), _buttonW, _buttonH, "Main Menu");
 
     draw_set_halign(fa_left);
 }
@@ -283,7 +400,7 @@ function ui_draw_mana_bar(_x, _y, _barW, _barH, _current, _max, _label)
     draw_rectangle(_x, _y, _x + _barW, _y + _barH, true);
 }
 
-function ui_draw_center_message(_title, _subtitle)
+function ui_draw_end_menu(_title)
 {
     var _guiW = display_get_gui_width();
     var _guiH = display_get_gui_height();
@@ -296,7 +413,15 @@ function ui_draw_center_message(_title, _subtitle)
     draw_set_colour(c_white);
 
     draw_text(_guiW * 0.5, 260, _title);
-    draw_text(_guiW * 0.5, 310, _subtitle);
+
+    var _buttonW = 240;
+    var _buttonH = 52;
+    var _buttonX = (_guiW - _buttonW) * 0.5;
+    var _buttonY = 360;
+    var _gap = 16;
+
+    ui_button(_buttonX, _buttonY, _buttonW, _buttonH, "Restart");
+    ui_button(_buttonX, _buttonY + (_buttonH + _gap), _buttonW, _buttonH, "Main Menu");
 
     draw_set_halign(fa_left);
 }

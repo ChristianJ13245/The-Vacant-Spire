@@ -29,12 +29,20 @@ function game_step()
             game_step_menu();
         break;
 
+        case GameState.HELP:
+            game_step_help(GameState.MENU);
+        break;
+
         case GameState.PLAYING:
             game_step_playing();
         break;
 
         case GameState.PAUSED:
             game_step_paused();
+        break;
+
+        case GameState.PAUSE_HELP:
+            game_step_help(GameState.PAUSED);
         break;
 
         case GameState.WON:
@@ -46,10 +54,50 @@ function game_step()
 
 function game_step_menu()
 {
-    // menu only needs to start for now
-    if (keyboard_check_pressed(vk_enter) || keyboard_check_pressed(vk_space))
+    var _guiW = display_get_gui_width();
+    var _buttonW = 240;
+    var _buttonH = 52;
+    var _buttonX = (_guiW - _buttonW) * 0.5;
+    var _buttonY = 310;
+    var _gap = 16;
+
+    // button clicked, start the run
+    if (ui_button_clicked(_buttonX, _buttonY, _buttonW, _buttonH))
     {
         game_start_new_run();
+        return;
+    }
+
+    if (ui_button_clicked(_buttonX, _buttonY + (_buttonH + _gap), _buttonW, _buttonH))
+    {
+        global.gameState = GameState.HELP;
+        return;
+    }
+
+    if (ui_button_clicked(_buttonX, _buttonY + ((_buttonH + _gap) * 2), _buttonW, _buttonH))
+    {
+        game_end();
+        return;
+    }
+}
+
+function game_step_help(_backState)
+{
+    var _buttonW = 120;
+    var _buttonH = 38;
+
+    // Esc backs out of help too
+    if (keyboard_check_pressed(vk_escape))
+    {
+        global.gameState = _backState;
+        return;
+    }
+
+    // back goes wherever opened help
+    if (ui_button_clicked(24, 24, _buttonW, _buttonH))
+    {
+        global.gameState = _backState;
+        return;
     }
 }
 
@@ -79,22 +127,39 @@ function game_step_playing()
 
 function game_step_paused()
 {
-    // Esc resumes the game
+    var _guiW = display_get_gui_width();
+    var _buttonW = 240;
+    var _buttonH = 50;
+    var _buttonX = (_guiW - _buttonW) * 0.5;
+    var _buttonY = 280;
+    var _gap = 14;
+
+    // Esc closes pause
     if (keyboard_check_pressed(vk_escape))
     {
         global.gameState = GameState.PLAYING;
         return;
     }
 
-    // R restarts the current floor
-    if (keyboard_check_pressed(ord("R")))
+    if (ui_button_clicked(_buttonX, _buttonY, _buttonW, _buttonH))
+    {
+        global.gameState = GameState.PLAYING;
+        return;
+    }
+
+    if (ui_button_clicked(_buttonX, _buttonY + (_buttonH + _gap), _buttonW, _buttonH))
+    {
+        global.gameState = GameState.PAUSE_HELP;
+        return;
+    }
+
+    if (ui_button_clicked(_buttonX, _buttonY + ((_buttonH + _gap) * 2), _buttonW, _buttonH))
     {
         game_restart_floor();
         return;
     }
 
-    // M returns to the main menu
-    if (keyboard_check_pressed(ord("M")))
+    if (ui_button_clicked(_buttonX, _buttonY + ((_buttonH + _gap) * 3), _buttonW, _buttonH))
     {
         game_back_to_menu();
         return;
@@ -103,17 +168,23 @@ function game_step_paused()
 
 function game_step_end_state()
 {
-    // M goes back to the menu after a win or loss
-    if (keyboard_check_pressed(ord("M")))
+    var _guiW = display_get_gui_width();
+    var _buttonW = 240;
+    var _buttonH = 52;
+    var _buttonX = (_guiW - _buttonW) * 0.5;
+    var _buttonY = 360;
+    var _gap = 16;
+
+    // restart after a win or loss
+    if (ui_button_clicked(_buttonX, _buttonY, _buttonW, _buttonH))
     {
-        game_back_to_menu();
+        game_start_new_run();
         return;
     }
 
-    // R starts game again after a win or loss
-    if (keyboard_check_pressed(ord("R")))
+    if (ui_button_clicked(_buttonX, _buttonY + (_buttonH + _gap), _buttonW, _buttonH))
     {
-        game_start_new_run();
+        game_back_to_menu();
         return;
     }
 }
@@ -209,7 +280,7 @@ function game_draw_background()
 {
     // only draw the battle background while we are actually in the battle
     // menu draws its own background in the GUI event
-    if (global.gameState != GameState.PLAYING && global.gameState != GameState.PAUSED)
+    if (global.gameState != GameState.PLAYING && global.gameState != GameState.PAUSED && global.gameState != GameState.PAUSE_HELP)
     {
         return;
     }
@@ -221,7 +292,7 @@ function game_draw_background()
 function game_draw_lanes()
 {
     // not drawing lane/movement guide lines anymore
-    if (global.gameState != GameState.PLAYING && global.gameState != GameState.PAUSED)
+    if (global.gameState != GameState.PLAYING && global.gameState != GameState.PAUSED && global.gameState != GameState.PAUSE_HELP)
     {
         return;
     }
