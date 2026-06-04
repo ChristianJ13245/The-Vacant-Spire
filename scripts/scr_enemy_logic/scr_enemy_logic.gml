@@ -43,8 +43,7 @@ function enemy_create()
 
     // sprites come from the enemy config now
     sprIdle = enemy_get_sprite(enemyConfig.idleSpriteName);
-    var _attackFallback = enemy_get_sprite(enemyConfig.fallbackAttackSpriteName, sprIdle);
-    sprAttack = enemy_get_sprite(enemyConfig.attackSpriteName, _attackFallback);
+    sprAttack = enemy_get_sprite(enemyConfig.attackSpriteName);
     sprFace = enemy_get_sprite(enemyConfig.faceSpriteName);
 
     // start idle
@@ -78,7 +77,6 @@ function enemy_get_config(_enemyType)
                 castDelay: 3,
                 idleSpriteName: "spr_training_dummy_idle",
                 attackSpriteName: "spr_training_dummy_attack",
-                fallbackAttackSpriteName: "",
                 faceSpriteName: "spr_training_dummy_face"
             };
 
@@ -93,7 +91,6 @@ function enemy_get_config(_enemyType)
                 castDelay: 3,
                 idleSpriteName: "spr_goblin_idle",
                 attackSpriteName: "spr_goblin_attack",
-                fallbackAttackSpriteName: "spr_goblin",
                 faceSpriteName: "spr_goblin_face"
             };
     }
@@ -101,18 +98,13 @@ function enemy_get_config(_enemyType)
     return enemy_get_config(EnemyType.GOBLIN);
 }
 
-function enemy_get_sprite(_spriteName, _fallback)
+function enemy_get_sprite(_spriteName)
 {
     var _sprite = asset_get_index(_spriteName);
 
     if (_sprite != -1)
     {
         return _sprite;
-    }
-
-    if (argument_count > 1)
-    {
-        return _fallback;
     }
 
     return -1;
@@ -206,14 +198,9 @@ function enemy_draw()
 {
     var _scale = enemy_get_depth_scale();
 
-    if (drawSprite != -1)
+    if (is_real(drawSprite) && drawSprite != -1)
     {
         draw_sprite_ext(drawSprite, drawFrame, x, y, 3 * _scale, 3 * _scale, 0, c_white, 1);
-    }
-    else
-    {
-        draw_set_colour(bodyColour);
-        draw_rectangle(x - 32, y - 48, x + 32, y + 48, false);
     }
 
     // uncomment while tuning hitboxes
