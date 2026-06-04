@@ -70,7 +70,7 @@
   ],
   "nineSlice": null,
   "parent": {
-    "name": "Enemies",
-    "path": "folders/Sprites/Enemies.yy",
+    "name": "Training Dummy",
+    "path": "folders/Sprites/Enemies/Training Dummy.yy",
   },
 }
