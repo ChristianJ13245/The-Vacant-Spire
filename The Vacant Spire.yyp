@@ -33,6 +33,12 @@
     {"id":{"name":"shd_player_aura","path":"shaders/shd_player_aura/shd_player_aura.yy",},"order":0,},
     {"id":{"name":"spr_arrow_right","path":"sprites/spr_arrow_right/spr_arrow_right.yy",},"order":1,},
     {"id":{"name":"spr_spell_fire","path":"sprites/spr_spell_fire/spr_spell_fire.yy",},"order":0,},
+    {"id":{"name":"spr_buttler_bases","path":"sprites/spr_buttler_bases/spr_buttler_bases.yy",},"order":0,},
+    {"id":{"name":"spr_buttler_black_combat","path":"sprites/spr_buttler_black_combat/spr_buttler_black_combat.yy",},"order":1,},
+    {"id":{"name":"spr_buttler_face","path":"sprites/spr_buttler_face/spr_buttler_face.yy",},"order":2,},
+    {"id":{"name":"spr_buttler_mix_to_white","path":"sprites/spr_buttler_mix_to_white/spr_buttler_mix_to_white.yy",},"order":3,},
+    {"id":{"name":"spr_buttler_white_combat","path":"sprites/spr_buttler_white_combat/spr_buttler_white_combat.yy",},"order":4,},
+    {"id":{"name":"spr_buttler_white_to_black","path":"sprites/spr_buttler_white_to_black/spr_buttler_white_to_black.yy",},"order":5,},
   ],
   "Options": [
     {"name":"Android","path":"options/android/options_android.yy",},
@@ -75,6 +81,7 @@
     {"resourceType":"GMFolder","resourceVersion":"1.0","name":"UI","folderPath":"folders/Sprites/UI.yy","order":8,},
     {"resourceType":"GMFolder","resourceVersion":"1.0","name":"Tile Sets","folderPath":"folders/Tile Sets.yy","order":2,},
     {"resourceType":"GMFolder","resourceVersion":"1.0","name":"Timelines","folderPath":"folders/Timelines.yy","order":8,},
+    {"resourceType":"GMFolder","resourceVersion":"1.0","name":"Butler","folderPath":"folders/Sprites/Enemies/Butler.yy","order":5,},
   ],
   "AudioGroups": [
     {"resourceType":"GMAudioGroup","resourceVersion":"1.3","name":"audiogroup_default","targets":-1,},
