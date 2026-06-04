@@ -1,3 +1,3 @@
-/// @description Update the enemy wizard
+/// @description Update the base enemy
 
 enemy_step();

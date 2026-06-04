@@ -211,7 +211,14 @@ function ui_draw_battle_hud()
     {
         if (variable_instance_exists(global.enemy, "currentHealth") && variable_instance_exists(global.enemy, "maxHealth"))
         {
-            ui_draw_health_bar(_enemyBarX, _barY, _barW, _barH, global.enemy.currentHealth, global.enemy.maxHealth, "Enemy", true);
+            var _enemyName = "Enemy";
+
+            if (variable_instance_exists(global.enemy, "displayName"))
+            {
+                _enemyName = global.enemy.displayName;
+            }
+
+            ui_draw_health_bar(_enemyBarX, _barY, _barW, _barH, global.enemy.currentHealth, global.enemy.maxHealth, _enemyName, true);
         }
     }
 

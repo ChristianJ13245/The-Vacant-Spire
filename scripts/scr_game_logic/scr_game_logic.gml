@@ -215,6 +215,32 @@ function game_restart_floor()
     game_spawn_enemy();
 }
 
+function game_advance_floor()
+{
+    // next enemy, same run
+    with (obj_spell)
+    {
+        instance_destroy();
+    }
+
+    with (obj_enemy)
+    {
+        instance_destroy();
+    }
+
+    global.enemy = noone;
+    global.currentFloor += 1;
+    global.debugText = "Floor " + string(global.currentFloor);
+
+    if (instance_exists(global.player))
+    {
+        global.player.x = global.config.playerStartX;
+        global.player.y = global.config.wizardY;
+    }
+
+    game_spawn_enemy();
+}
+
 function game_back_to_menu()
 {
     // clear everything then go back to menu
