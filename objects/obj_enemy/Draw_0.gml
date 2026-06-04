@@ -1,3 +1,3 @@
-/// @description Draw the enemy wizard placeholder
+/// @description Draw the base enemy
 
 enemy_draw();

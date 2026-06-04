@@ -36,6 +36,12 @@ enum SpellLane
     HIGH
 }
 
+enum EnemyType
+{
+    TRAINING_DUMMY,
+    GOBLIN
+}
+
 // simple config object for the game
 // keeps arena positions and shared numbers out of random scripts
 function PrototypeConfig() constructor

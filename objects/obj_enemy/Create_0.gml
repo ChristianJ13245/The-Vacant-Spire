@@ -1,3 +1,3 @@
-/// @description Set up the enemy wizard
+/// @description Set up the base enemy
 
 enemy_create();

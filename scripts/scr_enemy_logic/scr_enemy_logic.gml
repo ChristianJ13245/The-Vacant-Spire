@@ -2,17 +2,18 @@
 
 function enemy_create()
 {
-    // Enemy health starts the same as player for now
-    // tune this later based on enemy type
-    maxHealth = 100;
+    enemyType = enemy_type_from_floor(global.currentFloor);
+    enemyConfig = enemy_get_config(enemyType);
+
+    maxHealth = enemyConfig.maxHealth;
     currentHealth = maxHealth;
     isDead = false;
-    displayName = "Enemy";
+    displayName = enemyConfig.displayName;
     facing = -1;
-    bodyColour = make_colour_rgb(210, 80, 255);
+    bodyColour = enemyConfig.bodyColour;
 
     // movement
-    moveSpeed = 2.4;
+    moveSpeed = enemyConfig.moveSpeed;
     minY = global.config.arenaTopY;
     maxY = global.config.arenaBottomY;
 	
@@ -20,12 +21,12 @@ function enemy_create()
 	// enemy picks a y position and drifts toward it
 	moveTargetY = y;
 	moveThinkTimer = 0;
-	moveThinkDelay = room_speed * 0.8;
-	moveFollowChance = 65;
+	moveThinkDelay = room_speed * enemyConfig.moveThinkDelay;
+	moveFollowChance = enemyConfig.moveFollowChance;
 
     // simple enemy casting timer
     castTimer = 0;
-    castCooldown = room_speed * 2;
+    castCooldown = room_speed * enemyConfig.castDelay;
 
     // casting state
     isCasting = false;
@@ -41,16 +42,81 @@ function enemy_create()
     idleFrameDelay = 8;
     castFrameDelay = 6;
 
-    // sprites
-    sprIdle = asset_get_index("spr_aunt_rose_idle");
-    sprCastLow = asset_get_index("spr_aunt_rose_cast_low");
-    sprCastMid = asset_get_index("spr_aunt_rose_cast_mid");
-    sprCastHigh = asset_get_index("spr_aunt_rose_cast_high");
+    // sprites come from the enemy config now
+    sprIdle = enemy_get_sprite(enemyConfig.idleSpriteName);
+    sprCastLow = enemy_get_sprite(enemyConfig.castLowSpriteName, sprIdle);
+    sprCastMid = enemy_get_sprite(enemyConfig.castMidSpriteName, sprIdle);
+    sprCastHigh = enemy_get_sprite(enemyConfig.castHighSpriteName, sprIdle);
 
     // start idle
     drawSprite = sprIdle;
     drawFrame = 0;
     animTick = 0;
+}
+
+function enemy_type_from_floor(_floor)
+{
+    if (_floor <= 1)
+    {
+        return EnemyType.TRAINING_DUMMY;
+    }
+
+    return EnemyType.GOBLIN;
+}
+
+function enemy_get_config(_enemyType)
+{
+    switch (_enemyType)
+    {
+        case EnemyType.TRAINING_DUMMY:
+            return {
+                displayName: "Steve the Dummy",
+                maxHealth: 80,
+                bodyColour: make_colour_rgb(160, 120, 70),
+                moveSpeed: 0,
+                moveThinkDelay: 1,
+                moveFollowChance: 0,
+                castDelay: 3,
+                idleSpriteName: "spr_training_dummy_idle",
+                castLowSpriteName: "spr_training_dummy_cast_low",
+                castMidSpriteName: "spr_training_dummy_cast_mid",
+                castHighSpriteName: "spr_training_dummy_cast_high"
+            };
+
+        case EnemyType.GOBLIN:
+            return {
+                displayName: "The Nerdy Goblin",
+                maxHealth: 100,
+                bodyColour: make_colour_rgb(90, 190, 90),
+                moveSpeed: 2.4,
+                moveThinkDelay: 0.8,
+                moveFollowChance: 65,
+                castDelay: 3,
+                idleSpriteName: "spr_goblin_idle",
+                castLowSpriteName: "spr_goblin",
+                castMidSpriteName: "spr_goblin",
+                castHighSpriteName: "spr_goblin"
+            };
+    }
+
+    return enemy_get_config(EnemyType.GOBLIN);
+}
+
+function enemy_get_sprite(_spriteName, _fallback)
+{
+    var _sprite = asset_get_index(_spriteName);
+
+    if (_sprite != -1)
+    {
+        return _sprite;
+    }
+
+    if (argument_count > 1)
+    {
+        return _fallback;
+    }
+
+    return -1;
 }
 
 function enemy_step()
@@ -93,6 +159,11 @@ function enemy_step()
 
 function enemy_move_basic()
 {
+    if (moveSpeed <= 0)
+    {
+        return;
+    }
+
     if (!instance_exists(global.player))
     {
         return;
@@ -312,6 +383,12 @@ function enemy_set_cast_animation(_pose)
     drawFrame = 0;
     animTick = 0;
 
+    if (drawSprite == -1)
+    {
+        castAnimTimer = 12;
+        return;
+    }
+
     var _frameCount = sprite_get_number(drawSprite);
 
     // enough time to play once, plus a tiny hold so it reads clearly
@@ -349,8 +426,15 @@ function enemy_cast_spell(_spellInfo)
 function enemy_die()
 {
     isDead = true;
+
+    if (global.currentFloor < global.config.maxFloor)
+    {
+        game_advance_floor();
+        return;
+    }
+
     global.gameState = GameState.WON;
-    global.debugText = "Enemy defeated";
+    global.debugText = displayName + " defeated";
     instance_destroy();
 }
 
