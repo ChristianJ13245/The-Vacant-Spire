@@ -67,6 +67,12 @@ function player_create()
     sprCastLow = asset_get_index("spr_player_cast_low");
     sprCastMid = asset_get_index("spr_player_cast_mid");
     sprCastHigh = asset_get_index("spr_player_cast_high");
+	
+	// spell preview sprites
+	// used while charging so player can see what element is about to fire
+	sprPreviewFire = asset_get_index("spr_spell_fire");
+	sprPreviewWater = asset_get_index("spr_spell_water");
+	sprPreviewAir = asset_get_index("spr_spell_air");
 
     // start idle
     drawSprite = sprIdle;
@@ -161,14 +167,18 @@ function player_draw()
     var _drawY = player_get_draw_y();
     var _scale = player_get_depth_scale();
 
-    if (_spr != -1)
-    {
-        // aura behind player
-        player_draw_aura(_spr, _drawY, _scale);
+	if (_spr != -1)
+	{
+		// aura behind player
+		player_draw_aura(_spr, _drawY, _scale);
 
-        // normal player sprite
-        draw_sprite_ext(_spr, drawFrame, x, _drawY, 3 * _scale, 3 * _scale, 0, c_white, 1);
-    }
+		// normal player sprite
+		draw_sprite_ext(_spr, drawFrame, x, _drawY, 3 * _scale, 3 * _scale, 0, c_white, 1);
+
+		// little spell charge visual at the player's hand
+		player_draw_charge_preview(_drawY, _scale);
+	}
+	
     else
     {
         draw_set_colour(bodyColour);
@@ -177,6 +187,60 @@ function player_draw()
 
     // uncomment while tuning hitboxes
     // player_draw_debug_hitbox();
+}
+
+function player_draw_charge_preview(_drawY, _depthScale)
+{
+    // only show this while charging
+    if (!isCharging)
+    {
+        return;
+    }
+
+    var _spr = player_get_charge_preview_sprite();
+
+    if (_spr == -1)
+    {
+        return;
+    }
+
+    var _chargeRatio = player_input_charge_ratio();
+
+    // starts small and grows while charging
+    var _spellScale = 0.65 + (_chargeRatio * 0.85);
+
+    // depth scale keeps it matching the player size a bit
+    _spellScale *= _depthScale;
+
+    // hand position
+    // facing pushes it in front of the player
+    var _handX = x + (facing * 34 * _depthScale);
+    var _handY = _drawY - (4 * _depthScale);
+
+    // tiny pulse so it feels alive while charging
+    var _pulse = 1 + (sin(current_time * 0.02) * 0.06);
+    _spellScale *= _pulse;
+
+    // enemy/player direction support
+    var _xScale = _spellScale * facing;
+
+    draw_sprite_ext(_spr, image_index, _handX, _handY, _xScale, _spellScale, 0, c_white, 1);
+}
+
+function player_get_charge_preview_sprite()
+{
+    // selectedElement comes from scr_player_input
+    if (selectedElement == SpellElement.FIRE)
+    {
+        return sprPreviewFire;
+    }
+
+    if (selectedElement == SpellElement.WATER)
+    {
+        return sprPreviewWater;
+    }
+
+    return sprPreviewAir;
 }
 
 function player_draw_aura(_spr, _drawY, _scaleAmount)

@@ -15,6 +15,13 @@ function enemy_create()
     moveSpeed = 2.4;
     minY = global.config.arenaTopY;
     maxY = global.config.arenaBottomY;
+	
+	// simple movement AI
+	// enemy picks a y position and drifts toward it
+	moveTargetY = y;
+	moveThinkTimer = 0;
+	moveThinkDelay = room_speed * 0.8;
+	moveFollowChance = 65;
 
     // simple enemy casting timer
     castTimer = 0;
@@ -91,14 +98,33 @@ function enemy_move_basic()
         return;
     }
 
-    // simple tracking so enemy doesn't sit in one perfect line forever
-    var _targetY = global.player.y;
+    // every so often, pick a new place to move toward
+    moveThinkTimer -= 1;
 
-    if (y < _targetY - 16)
+    if (moveThinkTimer <= 0)
+    {
+        moveThinkTimer = moveThinkDelay;
+
+        // sometimes follow the player
+        // sometimes pick a random height so it doesnt look glued to them
+        if (irandom(100) < moveFollowChance)
+        {
+            moveTargetY = global.player.y + irandom_range(-35, 35);
+        }
+        else
+        {
+            moveTargetY = random_range(minY, maxY);
+        }
+
+        moveTargetY = clamp(moveTargetY, minY, maxY);
+    }
+
+    // move toward target
+    if (y < moveTargetY - 4)
     {
         y += moveSpeed;
     }
-    else if (y > _targetY + 16)
+    else if (y > moveTargetY + 4)
     {
         y -= moveSpeed;
     }
