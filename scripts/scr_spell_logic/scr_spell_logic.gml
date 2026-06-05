@@ -223,116 +223,66 @@ function spell_get_instance_hit_radius(_spellInst)
     return (_largest * _scale) * 0.5;
 }
 
-function spell_get_instance_bbox_left(_inst)
+function spell_get_instance_bbox(_inst, _side)
 {
     if (!instance_exists(_inst))
     {
         return 0;
     }
 
-    if (!variable_instance_exists(_inst, "drawSprite"))
+    var _drawY = _inst.y;
+
+    // player jump moves the drawn sprite and hitbox up
+    if (variable_instance_exists(_inst, "jumpOffset"))
     {
-        return _inst.x - 32;
+        _drawY += _inst.jumpOffset;
     }
 
-    if (_inst.drawSprite == -1)
+    var _drawSprite = -1;
+
+    if (!variable_instance_exists(_inst, "drawSprite"))
     {
-        return _inst.x - 32;
+        _drawSprite = -1;
+    }
+    else
+    {
+        _drawSprite = _inst.drawSprite;
+    }
+
+    if (_drawSprite == -1)
+    {
+        if (_side == 0) return _inst.x - 32;
+        if (_side == 1) return _inst.x + 32;
+        if (_side == 2) return _drawY - 48;
+        return _drawY + 48;
     }
 
     var _scale = 3 * depth_scale_from_y(_inst.y);
-    var _originX = sprite_get_xoffset(_inst.drawSprite);
-    var _bboxLeft = sprite_get_bbox_left(_inst.drawSprite);
 
-    return _inst.x + ((_bboxLeft - _originX) * _scale);
+    if (_side == 0) return _inst.x + ((sprite_get_bbox_left(_drawSprite) - sprite_get_xoffset(_drawSprite)) * _scale);
+    if (_side == 1) return _inst.x + ((sprite_get_bbox_right(_drawSprite) - sprite_get_xoffset(_drawSprite)) * _scale);
+    if (_side == 2) return _drawY + ((sprite_get_bbox_top(_drawSprite) - sprite_get_yoffset(_drawSprite)) * _scale);
+    return _drawY + ((sprite_get_bbox_bottom(_drawSprite) - sprite_get_yoffset(_drawSprite)) * _scale);
+}
+
+function spell_get_instance_bbox_left(_inst)
+{
+    return spell_get_instance_bbox(_inst, 0);
 }
 
 function spell_get_instance_bbox_right(_inst)
 {
-    if (!instance_exists(_inst))
-    {
-        return 0;
-    }
-
-    if (!variable_instance_exists(_inst, "drawSprite"))
-    {
-        return _inst.x + 32;
-    }
-
-    if (_inst.drawSprite == -1)
-    {
-        return _inst.x + 32;
-    }
-
-    var _scale = 3 * depth_scale_from_y(_inst.y);
-    var _originX = sprite_get_xoffset(_inst.drawSprite);
-    var _bboxRight = sprite_get_bbox_right(_inst.drawSprite);
-
-    return _inst.x + ((_bboxRight - _originX) * _scale);
+    return spell_get_instance_bbox(_inst, 1);
 }
 
 function spell_get_instance_bbox_top(_inst)
 {
-    if (!instance_exists(_inst))
-    {
-        return 0;
-    }
-
-    var _drawY = _inst.y;
-
-    // player jump moves the drawn sprite and hitbox up
-    if (variable_instance_exists(_inst, "jumpOffset"))
-    {
-        _drawY += _inst.jumpOffset;
-    }
-
-    if (!variable_instance_exists(_inst, "drawSprite"))
-    {
-        return _drawY - 48;
-    }
-
-    if (_inst.drawSprite == -1)
-    {
-        return _drawY - 48;
-    }
-
-    var _scale = 3 * depth_scale_from_y(_inst.y);
-    var _originY = sprite_get_yoffset(_inst.drawSprite);
-    var _bboxTop = sprite_get_bbox_top(_inst.drawSprite);
-
-    return _drawY + ((_bboxTop - _originY) * _scale);
+    return spell_get_instance_bbox(_inst, 2);
 }
 
 function spell_get_instance_bbox_bottom(_inst)
 {
-    if (!instance_exists(_inst))
-    {
-        return 0;
-    }
-
-    var _drawY = _inst.y;
-
-    // player jump moves the drawn sprite and hitbox up
-    if (variable_instance_exists(_inst, "jumpOffset"))
-    {
-        _drawY += _inst.jumpOffset;
-    }
-
-    if (!variable_instance_exists(_inst, "drawSprite"))
-    {
-        return _drawY + 48;
-    }
-
-    if (_inst.drawSprite == -1)
-    {
-        return _drawY + 48;
-    }
-
-    var _scale = 3 * depth_scale_from_y(_inst.y);
-    var _originY = sprite_get_yoffset(_inst.drawSprite);
-    var _bboxBottom = sprite_get_bbox_bottom(_inst.drawSprite);
-
-    return _drawY + ((_bboxBottom - _originY) * _scale);
+    return spell_get_instance_bbox(_inst, 3);
 }
 
 function spell_check_wizard_hit()

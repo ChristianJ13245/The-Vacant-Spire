@@ -290,60 +290,42 @@ function player_get_hitbox_scale()
 
 // sprite bbox based hitbox
 // uses the current sprite mask/bbox instead of hardcoded body size
-function player_get_hitbox_left()
+function player_get_hitbox(_side)
 {
     if (drawSprite == -1)
     {
-        return x - 32;
-    }
-
-    var _scale = player_get_hitbox_scale();
-    var _originX = sprite_get_xoffset(drawSprite);
-    var _bboxLeft = sprite_get_bbox_left(drawSprite);
-
-    return x + ((_bboxLeft - _originX) * _scale);
-}
-
-function player_get_hitbox_right()
-{
-    if (drawSprite == -1)
-    {
-        return x + 32;
-    }
-
-    var _scale = player_get_hitbox_scale();
-    var _originX = sprite_get_xoffset(drawSprite);
-    var _bboxRight = sprite_get_bbox_right(drawSprite);
-
-    return x + ((_bboxRight - _originX) * _scale);
-}
-
-function player_get_hitbox_top()
-{
-    if (drawSprite == -1)
-    {
-        return player_get_draw_y() - 48;
-    }
-
-    var _scale = player_get_hitbox_scale();
-    var _originY = sprite_get_yoffset(drawSprite);
-    var _bboxTop = sprite_get_bbox_top(drawSprite);
-
-    return player_get_draw_y() + ((_bboxTop - _originY) * _scale);
-}
-
-function player_get_hitbox_bottom()
-{
-    if (drawSprite == -1)
-    {
+        if (_side == 0) return x - 32;
+        if (_side == 1) return x + 32;
+        if (_side == 2) return player_get_draw_y() - 48;
         return player_get_draw_y() + 48;
     }
 
     var _scale = player_get_hitbox_scale();
-    var _originY = sprite_get_yoffset(drawSprite);
-    var _bboxBottom = sprite_get_bbox_bottom(drawSprite);
 
-    return player_get_draw_y() + ((_bboxBottom - _originY) * _scale);
+    if (_side == 0) return x + ((sprite_get_bbox_left(drawSprite) - sprite_get_xoffset(drawSprite)) * _scale);
+    if (_side == 1) return x + ((sprite_get_bbox_right(drawSprite) - sprite_get_xoffset(drawSprite)) * _scale);
+    if (_side == 2) return player_get_draw_y() + ((sprite_get_bbox_top(drawSprite) - sprite_get_yoffset(drawSprite)) * _scale);
+    return player_get_draw_y() + ((sprite_get_bbox_bottom(drawSprite) - sprite_get_yoffset(drawSprite)) * _scale);
+}
+
+function player_get_hitbox_left()
+{
+    return player_get_hitbox(0);
+}
+
+function player_get_hitbox_right()
+{
+    return player_get_hitbox(1);
+}
+
+function player_get_hitbox_top()
+{
+    return player_get_hitbox(2);
+}
+
+function player_get_hitbox_bottom()
+{
+    return player_get_hitbox(3);
 }
 
 function player_draw_debug_hitbox()

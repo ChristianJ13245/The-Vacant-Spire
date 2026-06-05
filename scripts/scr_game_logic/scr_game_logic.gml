@@ -246,32 +246,27 @@ function game_start_pre_combat_dialogue()
 
 function game_get_enemy_display_name()
 {
-    if (!instance_exists(global.enemy))
-    {
-        return "the enemy";
-    }
-
-    if (!variable_instance_exists(global.enemy, "displayName"))
-    {
-        return "the enemy";
-    }
-
-    return global.enemy.displayName;
+    return game_get_enemy_var("displayName", "the enemy");
 }
 
 function game_get_enemy_face_sprite()
 {
+    return game_get_enemy_var("sprFace", -1);
+}
+
+function game_get_enemy_var(_name, _fallback)
+{
     if (!instance_exists(global.enemy))
     {
-        return -1;
+        return _fallback;
     }
 
-    if (!variable_instance_exists(global.enemy, "sprFace"))
+    if (!variable_instance_exists(global.enemy, _name))
     {
-        return -1;
+        return _fallback;
     }
 
-    return global.enemy.sprFace;
+    return variable_instance_get(global.enemy, _name);
 }
 
 function game_get_dialogue_layer()
