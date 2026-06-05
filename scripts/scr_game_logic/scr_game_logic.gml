@@ -234,28 +234,44 @@ function game_start_pre_combat_dialogue()
     var _dialogueScale = 4;
     var _boxW = 256 * _dialogueScale;
     var _boxH = 32 * _dialogueScale;
-    var _enemyName = "the enemy";
-    var _portraitSprite = -1;
-
-    if (instance_exists(global.enemy))
-    {
-        if (variable_instance_exists(global.enemy, "displayName"))
-        {
-            _enemyName = global.enemy.displayName;
-        }
-
-        if (variable_instance_exists(global.enemy, "sprFace"))
-        {
-            _portraitSprite = global.enemy.sprFace;
-        }
-    }
-
+    var _enemyName = game_get_enemy_display_name();
+    var _portraitSprite = game_get_enemy_face_sprite();
     var _boxX = (room_width - _boxW) * 0.5;
     var _boxY = room_height - _boxH - 24;
     var _text = dialogue_get_floor_intro(global.currentFloor);
 
     // keep this here so object events dont need changing
     global.activeDialogue = dialogue_create(_boxX, _boxY, game_get_dialogue_layer(), _portraitSprite, _text, 3, 1, -1, _dialogueScale, 0.25, 12, _enemyName);
+}
+
+function game_get_enemy_display_name()
+{
+    if (!instance_exists(global.enemy))
+    {
+        return "the enemy";
+    }
+
+    if (!variable_instance_exists(global.enemy, "displayName"))
+    {
+        return "the enemy";
+    }
+
+    return global.enemy.displayName;
+}
+
+function game_get_enemy_face_sprite()
+{
+    if (!instance_exists(global.enemy))
+    {
+        return -1;
+    }
+
+    if (!variable_instance_exists(global.enemy, "sprFace"))
+    {
+        return -1;
+    }
+
+    return global.enemy.sprFace;
 }
 
 function game_get_dialogue_layer()

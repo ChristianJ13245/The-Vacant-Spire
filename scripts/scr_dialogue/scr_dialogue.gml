@@ -41,23 +41,70 @@ function dialogue_get_floor_intro(_floor)
 	return "Click to skip text, then click again to start.";
 }
 
+function dialogue_setup_defaults()
+{
+	// keeps placed dialogue boxes from missing the new vars
+	if (!variable_instance_exists(id, "dialogueScale")) dialogueScale = 4;
+	if (!variable_instance_exists(id, "speakerName")) speakerName = "";
+	if (!variable_instance_exists(id, "autoCloseDelay")) autoCloseDelay = -1;
+	if (!variable_instance_exists(id, "doneHoldTimer")) doneHoldTimer = 0;
+	if (!variable_instance_exists(id, "inputLockTimer")) inputLockTimer = 0;
+	if (!variable_instance_exists(id, "soundVolume")) soundVolume = 0.25;
+	if (!variable_instance_exists(id, "sentencePauseDelay")) sentencePauseDelay = 12;
+	if (!variable_instance_exists(id, "pagesReady")) pagesReady = false;
+	if (!variable_instance_exists(id, "currentPage")) currentPage = 0;
+	if (!variable_instance_exists(id, "pageText")) pageText = "";
+}
+
+function dialogue_has_portrait()
+{
+	return is_real(portraitSprite) && portraitSprite != -1;
+}
+
+function dialogue_get_box_w()
+{
+	return sprite_get_width(spr_dialogueBoxBackground) * dialogueScale;
+}
+
+function dialogue_get_box_h()
+{
+	return sprite_get_height(spr_dialogueBoxBackground) * dialogueScale;
+}
+
+function dialogue_get_portrait_layout()
+{
+	var _boxW = dialogue_get_box_w();
+	var _boxH = dialogue_get_box_h();
+	var _pad = 4 * dialogueScale;
+	var _layout = {
+		hasPortrait: false,
+		x: 0,
+		y: 0,
+		scale: 1
+	};
+
+	if (!dialogue_has_portrait())
+	{
+		return _layout;
+	}
+
+	_layout.hasPortrait = true;
+	_layout.scale = (_boxH - (_pad * 2)) / sprite_get_height(portraitSprite);
+	_layout.x = x + _boxW - _pad - (sprite_get_width(portraitSprite) * _layout.scale);
+	_layout.y = y + _pad;
+
+	return _layout;
+}
+
 // Draw the dialogue box (called in the draw event of dialogue box objects)
 function dialogue_draw()
 {
+	dialogue_setup_defaults();
 	dialogue_prepare_pages();
 
-	if (!variable_instance_exists(id, "dialogueScale"))
-	{
-		dialogueScale = 4;
-	}
-
-	if (!variable_instance_exists(id, "speakerName"))
-	{
-		speakerName = "";
-	}
-
-	var _boxW = sprite_get_width(spr_dialogueBoxBackground) * dialogueScale;
-	var _boxH = sprite_get_height(spr_dialogueBoxBackground) * dialogueScale;
+	var _boxW = dialogue_get_box_w();
+	var _boxH = dialogue_get_box_h();
+	var _portrait = dialogue_get_portrait_layout();
 
 	// Draw dialogue box background
 	draw_sprite_ext(spr_dialogueBoxBackground, 0, x, y, dialogueScale, dialogueScale, 0, c_white, 1);
@@ -70,13 +117,8 @@ function dialogue_draw()
 	var _textWidth = dialogue_get_text_width();
 
 	// Draw portrait inside the right side of the box
-	if (is_real(portraitSprite) && portraitSprite != -1)
+	if (_portrait.hasPortrait)
 	{
-		var _portraitPad = 4 * dialogueScale;
-		var _portraitScale = (_boxH - (_portraitPad * 2)) / sprite_get_height(portraitSprite);
-		var _portraitW = sprite_get_width(portraitSprite) * _portraitScale;
-		var _portraitX = x + _boxW - _portraitPad - _portraitW;
-		var _portraitY = y + _portraitPad;
 		var _portraitFrame = 0;
 
 		if (stringPosition < string_length(pageText))
@@ -85,7 +127,7 @@ function dialogue_draw()
 			_portraitFrame = image_index;
 		}
 
-		dialogue_draw_sprite_top_left(portraitSprite, _portraitFrame, _portraitX, _portraitY, _portraitScale);
+		dialogue_draw_sprite_top_left(portraitSprite, _portraitFrame, _portrait.x, _portrait.y, _portrait.scale);
 	}
 
 	// Draw text
@@ -104,11 +146,6 @@ function dialogue_draw()
 
 function dialogue_prepare_pages()
 {
-	if (!variable_instance_exists(id, "pagesReady"))
-	{
-		pagesReady = false;
-	}
-
 	if (pagesReady)
 	{
 		return;
@@ -130,24 +167,14 @@ function dialogue_prepare_pages()
 
 function dialogue_get_text_width()
 {
-	if (!variable_instance_exists(id, "dialogueScale"))
-	{
-		dialogueScale = 4;
-	}
-
-	var _boxW = sprite_get_width(spr_dialogueBoxBackground) * dialogueScale;
-	var _boxH = sprite_get_height(spr_dialogueBoxBackground) * dialogueScale;
+	var _boxW = dialogue_get_box_w();
+	var _portrait = dialogue_get_portrait_layout();
 	var _textX = x + (8 * dialogueScale);
 	var _textRight = x + _boxW - (8 * dialogueScale);
 
-	if (is_real(portraitSprite) && portraitSprite != -1)
+	if (_portrait.hasPortrait)
 	{
-		var _portraitPad = 4 * dialogueScale;
-		var _portraitScale = (_boxH - (_portraitPad * 2)) / sprite_get_height(portraitSprite);
-		var _portraitW = sprite_get_width(portraitSprite) * _portraitScale;
-		var _portraitX = x + _boxW - _portraitPad - _portraitW;
-
-		_textRight = _portraitX - (4 * dialogueScale);
+		_textRight = _portrait.x - (4 * dialogueScale);
 	}
 
 	return max(40, (_textRight - _textX) / dialogueScale);
@@ -243,109 +270,121 @@ function dialogue_draw_sprite_top_left(_sprite, _frame, _x, _y, _scale)
 	draw_sprite_ext(_sprite, _frame, _drawX, _drawY, _scale, _scale, 0, c_white, 1);
 }
 
-// Step the dialogue box (called in the step event of dialogue box objects)
-function dialogue_step()
+function dialogue_advance_pressed()
 {
-	dialogue_prepare_pages();
-
-	if (!variable_instance_exists(id, "autoCloseDelay"))
-	{
-		autoCloseDelay = -1;
-	}
-
-	if (!variable_instance_exists(id, "doneHoldTimer"))
-	{
-		doneHoldTimer = 0;
-	}
-
-	if (!variable_instance_exists(id, "inputLockTimer"))
-	{
-		inputLockTimer = 0;
-	}
-
-	if (!variable_instance_exists(id, "soundVolume"))
-	{
-		soundVolume = 0.25;
-	}
-
-	if (!variable_instance_exists(id, "sentencePauseDelay"))
-	{
-		sentencePauseDelay = 12;
-	}
-
-	var _canAdvance = inputLockTimer <= 0;
-
 	if (inputLockTimer > 0)
 	{
 		inputLockTimer -= 1;
+		return false;
 	}
 
-	var _textLength = string_length(pageText);
-	var _advancePressed = _canAdvance
-		&& (mouse_check_button_pressed(mb_left)
+	return mouse_check_button_pressed(mb_left)
 		|| keyboard_check_pressed(vk_enter)
-		|| keyboard_check_pressed(vk_space));
+		|| keyboard_check_pressed(vk_space);
+}
 
-	if (_advancePressed)
+function dialogue_next_page()
+{
+	currentPage += 1;
+	pageText = dialoguePages[currentPage];
+	displayedText = "";
+	stringPosition = 0;
+	charTimer = 0;
+	doneHoldTimer = 0;
+}
+
+function dialogue_handle_advance(_textLength)
+{
+	if (!dialogue_advance_pressed())
 	{
-		if (stringPosition < _textLength)
-		{
-			// first click finishes the line
-			stringPosition = _textLength;
-			displayedText = pageText;
-			return;
-		}
+		return false;
+	}
 
-		if (currentPage < array_length(dialoguePages) - 1)
-		{
-			// next click goes to the next box
-			currentPage += 1;
-			pageText = dialoguePages[currentPage];
-			displayedText = "";
-			stringPosition = 0;
-			charTimer = 0;
-			doneHoldTimer = 0;
-			return;
-		}
+	if (stringPosition < _textLength)
+	{
+		// first click finishes this page
+		stringPosition = _textLength;
+		displayedText = pageText;
+		return true;
+	}
 
-		// second click closes it
-		instance_destroy();
+	if (currentPage < array_length(dialoguePages) - 1)
+	{
+		// next click goes to the next box
+		dialogue_next_page();
+		return true;
+	}
+
+	instance_destroy();
+	return true;
+}
+
+function dialogue_tick_typewriter(_textLength)
+{
+	charTimer ++; // increment timer for delay between letters
+
+	if (charTimer < charDelay || stringPosition >= _textLength)
+	{
 		return;
 	}
 
-	charTimer ++; // increment timer for delay between letters
+	charTimer = 0; // reset letter timer
+	stringPosition ++; // increment string position
+	displayedText = string_copy(pageText, 1, stringPosition);
 
-	// once the letter delay is over, if there are still letters left, print the next letter
-	if(charTimer >= charDelay && stringPosition < _textLength)
+	var _typedChar = string_char_at(pageText, stringPosition);
+
+	// other than where there are spaces, play a sound for each character
+	if (_typedChar != " ")
 	{
-		charTimer = 0; // reset letter timer
-		stringPosition ++; // increment string position
-	
-		// displayed text is a substring of the dialogue text, up to stringPosition
-	    displayedText = string_copy(pageText, 1, stringPosition);
-	
-		// other than where there are spaces, play a sound for each character
-		if(string_char_at(pageText, stringPosition) != " ")
-		{
-			audio_play_sound(snd_dialogueChirp, 0, 0, soundVolume, 0, random_range(soundPitch - 0.2, soundPitch + 0.2));
-		}
-
-		// tiny pause after sentence endings so it reads less flat
-		var _lastChar = string_char_at(pageText, stringPosition);
-
-		if (_lastChar == "." || _lastChar == "!" || _lastChar == "?")
-		{
-			charTimer = -sentencePauseDelay;
-		}
+		audio_play_sound(snd_dialogueChirp, 0, 0, soundVolume, 0, random_range(soundPitch - 0.2, soundPitch + 0.2));
 	}
 
-	if (autoCloseDelay >= 0 && stringPosition >= _textLength && currentPage >= array_length(dialoguePages) - 1)
+	// tiny pause after sentence endings so it reads less flat
+	if (_typedChar == "." || _typedChar == "!" || _typedChar == "?")
 	{
-		doneHoldTimer += 1;
-
-		if (doneHoldTimer >= autoCloseDelay)
-		{
-			instance_destroy();
-		}
+		charTimer = -sentencePauseDelay;
 	}
+}
+
+function dialogue_tick_auto_close(_textLength)
+{
+	if (autoCloseDelay < 0)
+	{
+		return;
+	}
+
+	if (stringPosition < _textLength)
+	{
+		return;
+	}
+
+	if (currentPage < array_length(dialoguePages) - 1)
+	{
+		return;
+	}
+
+	doneHoldTimer += 1;
+
+	if (doneHoldTimer >= autoCloseDelay)
+	{
+		instance_destroy();
+	}
+}
+
+// Step the dialogue box (called in the step event of dialogue box objects)
+function dialogue_step()
+{
+	dialogue_setup_defaults();
+	dialogue_prepare_pages();
+
+	var _textLength = string_length(pageText);
+
+	if (dialogue_handle_advance(_textLength))
+	{
+		return;
+	}
+
+	dialogue_tick_typewriter(_textLength);
+	dialogue_tick_auto_close(_textLength);
 }
