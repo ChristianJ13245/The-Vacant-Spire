@@ -16,6 +16,10 @@ function ui_draw()
             ui_draw_help_screen(GameState.MENU);
         break;
 
+        case GameState.PRE_COMBAT:
+            // dialogue box draws itself before combat starts
+        break;
+
         case GameState.PLAYING:
             ui_draw_battle_hud();
         break;

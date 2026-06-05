@@ -5,6 +5,7 @@ enum GameState
 {
     MENU,
     HELP,
+    PRE_COMBAT,
     PLAYING,
     PAUSED,
     PAUSE_HELP,
@@ -50,6 +51,7 @@ function PrototypeConfig() constructor
     roomHeight = 720;
 
     instanceLayer = "Instances";
+    dialogueLayer = "UI";
 
     playerStartX = 160;
     enemyStartX = 1120;

@@ -10,6 +10,8 @@ function game_create()
     global.currentFloor = 1;
     global.player = noone;
     global.enemy = noone;
+    global.activeDialogue = noone;
+    global.preCombatTimer = 0;
 
     // Simple debug line
     // see what the game controller is doing
@@ -31,6 +33,10 @@ function game_step()
 
         case GameState.HELP:
             game_step_help(GameState.MENU);
+        break;
+
+        case GameState.PRE_COMBAT:
+            game_step_pre_combat();
         break;
 
         case GameState.PLAYING:
@@ -99,6 +105,24 @@ function game_step_help(_backState)
         global.gameState = _backState;
         return;
     }
+}
+
+function game_step_pre_combat()
+{
+    // wait until the dialogue box is gone, then give combat a tiny beat
+    if (instance_exists(global.activeDialogue))
+    {
+        return;
+    }
+
+    if (global.preCombatTimer > 0)
+    {
+        global.preCombatTimer -= 1;
+        return;
+    }
+
+    global.gameState = GameState.PLAYING;
+    global.debugText = "Combat started";
 }
 
 function game_step_playing()
@@ -196,11 +220,55 @@ function game_start_new_run()
     game_clear_battle_instances();
 
     global.currentFloor = 1;
-    global.gameState = GameState.PLAYING;
-    global.debugText = "Game started";
+    global.gameState = GameState.PRE_COMBAT;
+    global.debugText = "Get ready";
+    global.preCombatTimer = room_speed * 0.5;
 
     game_spawn_player();
     game_spawn_enemy();
+    game_start_pre_combat_dialogue();
+}
+
+function game_start_pre_combat_dialogue()
+{
+    var _dialogueScale = 4;
+    var _boxW = 256 * _dialogueScale;
+    var _boxH = 32 * _dialogueScale;
+    var _enemyName = "the enemy";
+    var _portraitSprite = -1;
+
+    if (instance_exists(global.enemy))
+    {
+        if (variable_instance_exists(global.enemy, "displayName"))
+        {
+            _enemyName = global.enemy.displayName;
+        }
+
+        if (variable_instance_exists(global.enemy, "sprFace"))
+        {
+            _portraitSprite = global.enemy.sprFace;
+        }
+    }
+
+    var _boxX = (room_width - _boxW) * 0.5;
+    var _boxY = room_height - _boxH - 24;
+    var _text = dialogue_get_floor_intro(global.currentFloor);
+
+    // keep this here so object events dont need changing
+    global.activeDialogue = dialogue_create(_boxX, _boxY, game_get_dialogue_layer(), _portraitSprite, _text, 3, 1, -1, _dialogueScale, 0.25, 12, _enemyName);
+}
+
+function game_get_dialogue_layer()
+{
+    var _layerName = global.config.dialogueLayer;
+
+    // use the ui instance layer if the room has one
+    if (layer_get_id(_layerName) != -1)
+    {
+        return _layerName;
+    }
+
+    return global.config.instanceLayer;
 }
 
 function game_restart_floor()
@@ -230,7 +298,9 @@ function game_advance_floor()
 
     global.enemy = noone;
     global.currentFloor += 1;
+    global.gameState = GameState.PRE_COMBAT;
     global.debugText = "Floor " + string(global.currentFloor);
+    global.preCombatTimer = room_speed * 0.5;
 
     if (instance_exists(global.player))
     {
@@ -239,6 +309,7 @@ function game_advance_floor()
     }
 
     game_spawn_enemy();
+    game_start_pre_combat_dialogue();
 }
 
 function game_back_to_menu()
@@ -271,9 +342,16 @@ function game_clear_battle_instances()
         instance_destroy();
     }
 
+    // Remove dialogue
+    with (obj_dialogueBox)
+    {
+        instance_destroy();
+    }
+
     // Clear references
     global.player = noone;
     global.enemy = noone;
+    global.activeDialogue = noone;
 }
 
 function game_spawn_player()
@@ -306,7 +384,7 @@ function game_draw_background()
 {
     // only draw the battle background while we are actually in the battle
     // menu draws its own background in the GUI event
-    if (global.gameState != GameState.PLAYING && global.gameState != GameState.PAUSED && global.gameState != GameState.PAUSE_HELP)
+    if (global.gameState != GameState.PRE_COMBAT && global.gameState != GameState.PLAYING && global.gameState != GameState.PAUSED && global.gameState != GameState.PAUSE_HELP)
     {
         return;
     }
@@ -318,7 +396,7 @@ function game_draw_background()
 function game_draw_lanes()
 {
     // not drawing lane/movement guide lines anymore
-    if (global.gameState != GameState.PLAYING && global.gameState != GameState.PAUSED && global.gameState != GameState.PAUSE_HELP)
+    if (global.gameState != GameState.PRE_COMBAT && global.gameState != GameState.PLAYING && global.gameState != GameState.PAUSED && global.gameState != GameState.PAUSE_HELP)
     {
         return;
     }
