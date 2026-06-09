@@ -12,6 +12,17 @@ function enemy_create()
     facing = -1;
     bodyColour = enemyConfig.bodyColour;
 
+	// stat/behaviour table for our specific enemy mechanics/traits
+	stageNumber = enemyConfig.stageNumber;
+	phaseNumber = enemyConfig.phaseNumber;
+	phaseCount = enemyConfig.phaseCount;
+	damageScale = enemyConfig.damageScale;
+	predictionChance = enemyConfig.predictionChance;
+	buffedSpellChance = enemyConfig.buffedSpellChance;
+	shieldChance = enemyConfig.shieldChance;
+	fakeOutChance = enemyConfig.fakeOutChance;
+	dodgeChance = enemyConfig.dodgeChance;
+
     // movement
     moveSpeed = enemyConfig.moveSpeed;
     minY = global.config.arenaTopY;
@@ -54,9 +65,19 @@ function enemy_create()
 
 function enemy_type_from_floor(_floor)
 {
-    if (_floor <= 1)
+    switch (_floor)
     {
-        return EnemyType.TRAINING_DUMMY;
+        case 1: return EnemyType.TRAINING_DUMMY;
+        case 2: return EnemyType.GOBLIN;
+        case 3: return EnemyType.NOSY_AUNT;
+        case 4: return EnemyType.VEXATIOUS_FAIRY;
+        case 5: return EnemyType.BUTLER_ONE;
+        case 6: return EnemyType.BUTLER_TWO;
+        case 7: return EnemyType.BREAKNECK_GOLEM;
+        case 8: return EnemyType.TRAINED_DUMMY;
+        case 9: return EnemyType.NECROMANCER_ONE;
+        case 10: return EnemyType.NECROMANCER_TWO;
+        case 11: return EnemyType.NECROMANCER_THREE;
     }
 
     return EnemyType.GOBLIN;
@@ -69,12 +90,21 @@ function enemy_get_config(_enemyType)
         case EnemyType.TRAINING_DUMMY:
             return {
                 displayName: "Steve the Dummy",
+				stageNumber: 1,
+                phaseNumber: 1,
+                phaseCount: 1,
                 maxHealth: 80,
+                damageScale: 1,
                 bodyColour: make_colour_rgb(160, 120, 70),
                 moveSpeed: 0,
                 moveThinkDelay: 1,
                 moveFollowChance: 0,
                 castDelay: 3,
+                predictionChance: 0,
+                buffedSpellChance: 0,
+                shieldChance: 0,
+                fakeOutChance: 0,
+                dodgeChance: 0,
                 idleSpriteName: "spr_training_dummy_idle",
                 attackSpriteName: "spr_training_dummy_attack",
                 faceSpriteName: "spr_training_dummy_face"
@@ -83,15 +113,231 @@ function enemy_get_config(_enemyType)
         case EnemyType.GOBLIN:
             return {
                 displayName: "The Nerdy Goblin",
+                stageNumber: 2,
+                phaseNumber: 1,
+                phaseCount: 1,
                 maxHealth: 100,
+                damageScale: 1,
                 bodyColour: make_colour_rgb(90, 190, 90),
                 moveSpeed: 2.4,
                 moveThinkDelay: 0.8,
                 moveFollowChance: 65,
                 castDelay: 3,
+                predictionChance: 0,
+                buffedSpellChance: 0,
+                shieldChance: 0,
+                fakeOutChance: 0,
+                dodgeChance: 0,
                 idleSpriteName: "spr_goblin_idle",
                 attackSpriteName: "spr_goblin_attack",
                 faceSpriteName: "spr_goblin_face"
+            };
+
+        case EnemyType.NOSY_AUNT:
+            return {
+                displayName: "Aunt Rose",
+                stageNumber: 3,
+                phaseNumber: 1,
+                phaseCount: 1,
+                maxHealth: 95,
+                damageScale: 1,
+                bodyColour: make_colour_rgb(210, 120, 180),
+                moveSpeed: 2.2,
+                moveThinkDelay: 0.7,
+                moveFollowChance: 75,
+                castDelay: 2,
+                predictionChance: 0,
+                buffedSpellChance: 0,
+                shieldChance: 0,
+                fakeOutChance: 0,
+                dodgeChance: 0,
+                idleSpriteName: "spr_aunt_rose_idle",
+                attackSpriteName: "spr_aunt_rose_attack",
+                faceSpriteName: "spr_aunt_rose_face"
+            };
+
+        case EnemyType.VEXATIOUS_FAIRY:
+            return {
+                displayName: "The Vexatious Fairy",
+                stageNumber: 4,
+                phaseNumber: 1,
+                phaseCount: 1,
+                maxHealth: 75,
+                damageScale: 0.85,
+                bodyColour: make_colour_rgb(180, 240, 255),
+                moveSpeed: 3.2,
+                moveThinkDelay: 0.45,
+                moveFollowChance: 35,
+                castDelay: 1,
+                predictionChance: 0,
+                buffedSpellChance: 0,
+                shieldChance: 0,
+                fakeOutChance: 0,
+                dodgeChance: 28,
+                idleSpriteName: "spr_fairy_idle",
+                attackSpriteName: "spr_fairy_attack",
+                faceSpriteName: "spr_fairy_face"
+            };
+
+        case EnemyType.BUTLER_ONE:
+            return {
+                displayName: "The Indecisive Butler",
+                stageNumber: 5,
+                phaseNumber: 1,
+                phaseCount: 2,
+                maxHealth: 90,
+                damageScale: 1,
+                bodyColour: make_colour_rgb(120, 120, 170),
+                moveSpeed: 2.1,
+                moveThinkDelay: 0.7,
+                moveFollowChance: 50,
+                castDelay: 2,
+                predictionChance: 55,
+                buffedSpellChance: 0,
+                shieldChance: 0,
+                fakeOutChance: 0,
+                dodgeChance: 0,
+                idleSpriteName: "spr_butler_one_idle",
+                attackSpriteName: "spr_butler_one_attack",
+                faceSpriteName: "spr_butler_one_face"
+            };
+
+        case EnemyType.BUTLER_TWO:
+            return {
+                displayName: "The Other Indecisive Butler",
+                stageNumber: 5,
+                phaseNumber: 2,
+                phaseCount: 2,
+                maxHealth: 90,
+                damageScale: 1,
+                bodyColour: make_colour_rgb(110, 110, 160),
+                moveSpeed: 2.4,
+                moveThinkDelay: 0.55,
+                moveFollowChance: 60,
+                castDelay: 2,
+                predictionChance: 45,
+                buffedSpellChance: 0,
+                shieldChance: 0,
+                fakeOutChance: 0,
+                dodgeChance: 0,
+                idleSpriteName: "spr_butler_two_idle",
+                attackSpriteName: "spr_butler_two_attack",
+                faceSpriteName: "spr_butler_two_face"
+            };
+
+        case EnemyType.BREAKNECK_GOLEM:
+            return {
+                displayName: "The Breakneck Golem",
+                stageNumber: 6,
+                phaseNumber: 1,
+                phaseCount: 1,
+                maxHealth: 150,
+                damageScale: 1.35,
+                bodyColour: make_colour_rgb(130, 130, 130),
+                moveSpeed: 1.4,
+                moveThinkDelay: 0.9,
+                moveFollowChance: 45,
+                castDelay: 3,
+                predictionChance: 0,
+                buffedSpellChance: 0,
+                shieldChance: 25,
+                fakeOutChance: 0,
+                dodgeChance: 0,
+                idleSpriteName: "spr_golem_idle",
+                attackSpriteName: "spr_golem_attack",
+                faceSpriteName: "spr_golem_face"
+            };
+
+        case EnemyType.TRAINED_DUMMY:
+            return {
+                displayName: "Steve Trained Dummy",
+                stageNumber: 8,
+                phaseNumber: 1,
+                phaseCount: 1,
+                maxHealth: 120,
+                damageScale: 1.15,
+                bodyColour: make_colour_rgb(190, 140, 80),
+                moveSpeed: 1.6,
+                moveThinkDelay: 0.65,
+                moveFollowChance: 50,
+                castDelay: 1,
+                predictionChance: 45,
+                buffedSpellChance: 35,
+                shieldChance: 0,
+                fakeOutChance: 0,
+                dodgeChance: 0,
+                idleSpriteName: "spr_training_dummy_idle",
+                attackSpriteName: "spr_training_dummy_attack",
+                faceSpriteName: "spr_training_dummy_face"
+            };
+
+        case EnemyType.NECROMANCER_ONE:
+            return {
+                displayName: "The Necromancer",
+                stageNumber: 9,
+                phaseNumber: 1,
+                phaseCount: 3,
+                maxHealth: 120,
+                damageScale: 1.15,
+                bodyColour: make_colour_rgb(90, 40, 120),
+                moveSpeed: 2.2,
+                moveThinkDelay: 0.6,
+                moveFollowChance: 65,
+                castDelay: 2,
+                predictionChance: 55,
+                buffedSpellChance: 30,
+                shieldChance: 0,
+                fakeOutChance: 0,
+                dodgeChance: 0,
+                idleSpriteName: "spr_necromancer_idle",
+                attackSpriteName: "spr_necromancer_attack",
+                faceSpriteName: "spr_necromancer_face"
+            };
+
+        case EnemyType.NECROMANCER_TWO:
+            return {
+                displayName: "The Necromancer",
+                stageNumber: 9,
+                phaseNumber: 2,
+                phaseCount: 3,
+                maxHealth: 140,
+                damageScale: 1.25,
+                bodyColour: make_colour_rgb(110, 35, 150),
+                moveSpeed: 2.5,
+                moveThinkDelay: 0.5,
+                moveFollowChance: 70,
+                castDelay: 2,
+                predictionChance: 65,
+                buffedSpellChance: 40,
+                shieldChance: 0,
+                fakeOutChance: 20,
+                dodgeChance: 0,
+                idleSpriteName: "spr_necromancer_idle",
+                attackSpriteName: "spr_necromancer_attack",
+                faceSpriteName: "spr_necromancer_face"
+            };
+
+        case EnemyType.NECROMANCER_THREE:
+            return {
+                displayName: "The Necromancer",
+                stageNumber: 9,
+                phaseNumber: 3,
+                phaseCount: 3,
+                maxHealth: 170,
+                damageScale: 1.35,
+                bodyColour: make_colour_rgb(140, 25, 180),
+                moveSpeed: 2.9,
+                moveThinkDelay: 0.45,
+                moveFollowChance: 75,
+                castDelay: 2,
+                predictionChance: 75,
+                buffedSpellChance: 45,
+                shieldChance: 0,
+                fakeOutChance: 25,
+                dodgeChance: 20,
+                idleSpriteName: "spr_necromancer_idle",
+                attackSpriteName: "spr_necromancer_attack",
+                faceSpriteName: "spr_necromancer_face"
             };
     }
 

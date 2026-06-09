@@ -40,7 +40,16 @@ enum SpellLane
 enum EnemyType
 {
     TRAINING_DUMMY,
-    GOBLIN
+    GOBLIN,
+	NOSY_AUNT,
+    VEXATIOUS_FAIRY,
+    BUTLER_ONE,
+    BUTLER_TWO,
+    BREAKNECK_GOLEM,
+    TRAINED_DUMMY,
+    NECROMANCER_ONE,
+    NECROMANCER_TWO,
+    NECROMANCER_THREE
 }
 
 // simple config object for the game
@@ -71,7 +80,9 @@ function PrototypeConfig() constructor
     // start around the middle of the fight area
     wizardY = laneMiddleY;
 
-    maxFloor = 2;
+	// actual fight count, not story stage count
+	// butlers and necromancer use extra entries for phases
+	maxFloor = 11;
 }
 
 // spell object exists in the room, this struct stores what kind of spell it is
