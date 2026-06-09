@@ -35,7 +35,34 @@ function dialogue_get_floor_intro(_floor)
 			return "...";
 
 		case 2:
-			return "Wait... you actually got past steve! Do you have any idea how many hours of magical research I put into making him cast spells!";
+			return "Wait... you actually got past steve? Do you have any idea how many hours of magical research I put into making him cast spells!";
+
+		case 3:
+			return "Oh my how long has it been! Do you have a wife yet? How's your finances going? Any health concerns? You can tell me everything as I walk you out!";
+
+		case 4:
+			return "I've been waiting all day to cause trouble.";
+
+		case 5:
+			return "Welcome, honored guest! Or should we say unwelcome?";
+
+		case 6:
+			return "Welcome, honored guest! Or should we say unwelcome?";
+
+		case 7:
+			return "Speed is strength.";
+
+		case 8:
+			return "Steve has been training.";
+
+		case 9:
+			return "empty for now until script is done";
+
+		case 10:
+			return "empty for now until script is done";
+
+		case 11:
+			return "empty for now until script is done";
 	}
 
 	return "Click to skip text, then click again to start.";

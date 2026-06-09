@@ -594,7 +594,69 @@ function enemy_choose_random_spell()
     var _spellPower = irandom(2);
     var _spellElement = irandom(2);
 
+	if (enemy_should_predict_player())
+    {
+        _spellElement = enemy_get_counter_element();
+    }
+
+    if (enemy_should_buff_spell())
+    {
+        _spellPower += 1;
+
+        if (_spellPower > SpellPower.STRONG)
+        {
+            _spellPower = SpellPower.STRONG;
+        }
+    }
+
     return new SpellData(_spellPower, _spellElement);
+}
+
+function enemy_should_predict_player()
+{
+    if (predictionChance <= 0)
+    {
+        return false;
+    }
+
+    return irandom(100) < predictionChance;
+}
+
+function enemy_should_buff_spell()
+{
+    if (buffedSpellChance <= 0)
+    {
+        return false;
+    }
+
+    return irandom(100) < buffedSpellChance;
+}
+
+function enemy_get_counter_element()
+{
+    if (!instance_exists(global.player))
+    {
+        return irandom(2);
+    }
+
+    if (!variable_instance_exists(global.player, "selectedElement"))
+    {
+        return irandom(2);
+    }
+
+    var _playerElement = global.player.selectedElement;
+
+    if (_playerElement == SpellElement.FIRE)
+    {
+        return SpellElement.WATER;
+    }
+
+    if (_playerElement == SpellElement.WATER)
+    {
+        return SpellElement.AIR;
+    }
+
+    return SpellElement.FIRE;
 }
 
 function enemy_cast_spell(_spellInfo)
@@ -611,8 +673,12 @@ function enemy_cast_spell(_spellInfo)
 
     enemy_set_cast_animation();
 
-    spell_spawn(id, _spellInfo, _spawnX, _spawnY, facing);
+	var _spell = spell_spawn(id, _spellInfo, _spawnX, _spawnY, facing);
 
+	if (instance_exists(_spell))
+	{
+		_spell.damage *= damageScale;
+	}
     global.debugText = "Enemy cast " + spell_info_to_text(_spellInfo);
 }
 
@@ -638,13 +704,44 @@ function enemy_is_alive()
 
 function enemy_take_damage(_amount)
 {
+    if (enemy_should_dodge())
+    {
+        global.debugText = displayName + " dodged";
+        return;
+    }
+
+    if (enemy_should_block())
+    {
+        _amount *= 0.5;
+        global.debugText = displayName + " blocked some damage";
+    }
+
     currentHealth -= _amount;
 
-    // stop health going under 0
     if (currentHealth < 0)
     {
         currentHealth = 0;
     }
 
-    global.debugText = "Enemy took " + string(_amount) + " damage";
+    global.debugText = displayName + " took " + string(round(_amount)) + " damage";
+}
+
+function enemy_should_dodge()
+{
+    if (dodgeChance <= 0)
+    {
+        return false;
+    }
+
+    return irandom(100) < dodgeChance;
+}
+
+function enemy_should_block()
+{
+    if (shieldChance <= 0)
+    {
+        return false;
+    }
+
+    return irandom(100) < shieldChance;
 }
