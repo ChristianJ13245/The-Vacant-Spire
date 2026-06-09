@@ -63,6 +63,50 @@ function enemy_create()
     animTick = 0;
 }
 
+
+function enemy_step()
+{
+    if (global.gameState != GameState.PLAYING)
+    {
+        return;
+    }
+	
+	if (global.config.debugInstaDefeat && keyboard_check_pressed(ord("0")))
+	{
+		currentHealth = 0;
+	}
+
+    enemy_move_basic();
+
+    // enemy casts on a timer
+    castTimer += 1;
+
+    if (castTimer >= castCooldown && !isCasting)
+    {
+        castTimer = 0;
+
+        var _spellInfo = enemy_choose_random_spell();
+        enemy_cast_spell(_spellInfo);
+    }
+
+    enemy_update_animation();
+
+    if (isCasting)
+    {
+        castAnimTimer -= 1;
+
+        if (castAnimTimer <= 0)
+        {
+            enemy_set_idle_animation();
+        }
+    }
+
+    if (currentHealth <= 0 && !isDead)
+    {
+        enemy_die();
+    }
+}
+
 function enemy_type_from_floor(_floor)
 {
     switch (_floor)
@@ -347,44 +391,6 @@ function enemy_get_config(_enemyType)
 function enemy_get_sprite(_spriteName)
 {
     return asset_get_index(_spriteName);
-}
-
-function enemy_step()
-{
-    if (global.gameState != GameState.PLAYING)
-    {
-        return;
-    }
-
-    enemy_move_basic();
-
-    // enemy casts on a timer
-    castTimer += 1;
-
-    if (castTimer >= castCooldown && !isCasting)
-    {
-        castTimer = 0;
-
-        var _spellInfo = enemy_choose_random_spell();
-        enemy_cast_spell(_spellInfo);
-    }
-
-    enemy_update_animation();
-
-    if (isCasting)
-    {
-        castAnimTimer -= 1;
-
-        if (castAnimTimer <= 0)
-        {
-            enemy_set_idle_animation();
-        }
-    }
-
-    if (currentHealth <= 0 && !isDead)
-    {
-        enemy_die();
-    }
 }
 
 function enemy_move_basic()

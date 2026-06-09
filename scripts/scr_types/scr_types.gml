@@ -83,6 +83,9 @@ function PrototypeConfig() constructor
 	// actual fight count, not story stage count
 	// butlers and necromancer use extra entries for phases
 	maxFloor = 11;
+	
+	// toggle for quickly testing floor flow
+	debugInstaDefeat = true;
 }
 
 // spell object exists in the room, this struct stores what kind of spell it is
