@@ -63,6 +63,7 @@ function enemy_create()
 
     phaseIntroStarted = false;
     phaseIntroDone = sprPhaseTransition == -1;
+    phaseIntroWaitTimer = room_speed * 0.75;
     phaseIntroHoldTimer = 8;
 
     // start idle
@@ -369,9 +370,9 @@ function enemy_get_config(_enemyType)
                 shieldChance: 0,
                 fakeOutChance: 0,
                 dodgeChance: 0,
-                idleSpriteName: "spr_necromancer_idle",
-                attackSpriteName: "spr_necromancer_attack",
-                faceSpriteName: "spr_necromancer_face",
+                idleSpriteName: "spr_necromancer_1_idle",
+                attackSpriteName: "spr_necromancer_1_attack",
+                faceSpriteName: "spr_necromancer_1_face",
                 startIdleSpriteName: "",
                 phaseTransitionSpriteName: ""
             };
@@ -579,8 +580,22 @@ function enemy_update_phase_intro()
         return false;
     }
 
+    // show the starting pose for a moment before changing
+    // gives the butler mix / white pose time to actually read
     if (!phaseIntroStarted)
     {
+        if (phaseIntroWaitTimer > 0)
+        {
+            phaseIntroWaitTimer -= 1;
+
+            if (sprStartIdle != -1)
+            {
+                drawSprite = sprStartIdle;
+            }
+
+            return true;
+        }
+
         phaseIntroStarted = true;
         drawSprite = sprPhaseTransition;
         drawFrame = 0;
@@ -815,6 +830,12 @@ function enemy_is_alive()
 
 function enemy_take_damage(_amount)
 {
+    // dont let the player nuke the butler while the little transform is playing
+    if (!phaseIntroDone)
+    {
+        return;
+    }
+
     if (enemy_should_dodge())
     {
         global.debugText = displayName + " dodged";

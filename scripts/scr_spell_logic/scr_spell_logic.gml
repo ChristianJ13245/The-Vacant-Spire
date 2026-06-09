@@ -220,7 +220,7 @@ function spell_get_instance_hit_radius(_spellInst)
         _scale = 1.5;
     }
 
-    return (_largest * _scale) * 0.5;
+    return (_largest * _scale) * 0.35;
 }
 
 function spell_get_instance_bbox(_inst, _side)

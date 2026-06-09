@@ -42,13 +42,13 @@ function player_create()
 
     // mana regen
     // regenDelay stops mana coming back instantly after casting
-    manaRegenAmount = 0.75;
-    manaRegenDelay = room_speed * 0.6;
+    manaRegenAmount = 1.15;
+    manaRegenDelay = room_speed * 0.65;
     manaRegenTimer = 0;
 
     // mana burnout
     // if player tries to cast with not enough mana, regen pauses for a bit
-    manaEmptyCooldownTime = room_speed * 1.2;
+    manaEmptyCooldownTime = room_speed * 0.6;
     manaEmptyCooldownTimer = 0;
 
     // animation values we control ourselves
@@ -373,15 +373,15 @@ function player_get_spell_mana_cost(_spellPower)
 {
     if (_spellPower == SpellPower.QUICK)
     {
-        return 22;
+        return 15;
     }
 
     if (_spellPower == SpellPower.MEDIUM)
     {
-        return 42;
+        return 25;
     }
 
-    return 70;
+    return 50;
 }
 
 function player_has_enough_mana(_spellPower)
