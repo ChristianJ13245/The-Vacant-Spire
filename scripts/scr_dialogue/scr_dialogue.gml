@@ -26,10 +26,10 @@ function dialogue_create(_x = 32, _y = 128, _layer = "Instances", _portraitSprit
 	return dialogueBox;
 }
 
-function dialogue_get_floor_intro(_floor)
+function dialogue_get_fight_intro(_fight)
 {
 	// add each first encounter script in here
-	switch (_floor)
+	switch (_fight)
 	{
 		case 1:
 			return "...";

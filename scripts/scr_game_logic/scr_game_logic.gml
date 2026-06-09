@@ -8,6 +8,7 @@ function game_create()
     // general game information and stats, pretty self explanatory
     global.gameState = GameState.MENU;
     global.currentFloor = 1;
+	global.currentFight = 1;
     global.player = noone;
     global.enemy = noone;
     global.activeDialogue = noone;
@@ -56,6 +57,8 @@ function game_step()
             game_step_end_state();
         break;
     }
+
+    game_update_battle_background();
 }
 
 function game_step_menu()
@@ -219,8 +222,9 @@ function game_start_new_run()
     // stop duplicates from stacking up
     game_clear_battle_instances();
 
-    global.currentFloor = 1;
-    global.gameState = GameState.PRE_COMBAT;
+    global.currentFight = 1;
+    global.currentFloor = game_floor_from_fight(global.currentFight);
+	global.gameState = GameState.PRE_COMBAT;
     global.debugText = "Get ready";
     global.preCombatTimer = room_speed * 0.5;
 
@@ -238,7 +242,7 @@ function game_start_pre_combat_dialogue()
     var _portraitSprite = game_get_enemy_face_sprite();
     var _boxX = (room_width - _boxW) * 0.5;
     var _boxY = room_height - _boxH - 24;
-    var _text = dialogue_get_floor_intro(global.currentFloor);
+	var _text = dialogue_get_fight_intro(global.currentFight);
 
     // keep this here so object events dont need changing
     global.activeDialogue = dialogue_create(_boxX, _boxY, game_get_dialogue_layer(), _portraitSprite, _text, 3, 1, -1, _dialogueScale, 0.25, 12, _enemyName);
@@ -308,7 +312,8 @@ function game_advance_floor()
     }
 
     global.enemy = noone;
-    global.currentFloor += 1;
+	global.currentFight += 1;
+    global.currentFloor = game_floor_from_fight(global.currentFight);
     global.gameState = GameState.PRE_COMBAT;
     global.debugText = "Floor " + string(global.currentFloor);
     global.preCombatTimer = room_speed * 0.5;
@@ -323,11 +328,35 @@ function game_advance_floor()
     game_start_pre_combat_dialogue();
 }
 
+function game_floor_from_fight(_fight)
+{
+    switch (_fight)
+    {
+        case 1: return 1; // Training Dummy
+        case 2: return 2; // Goblin
+        case 3: return 3; // Aunt Rose
+        case 4: return 4; // Fairy
+
+        case 5: return 5; // Butler white phase
+        case 6: return 5; // Butler black phase
+
+        case 7: return 6; // Golem
+        case 8: return 7; // Trained Dummy
+
+        case 9: return 8; // Necromancer phase 1
+        case 10: return 8; // Necromancer phase 2
+        case 11: return 8; // Necromancer phase 3
+    }
+
+    return 1;
+}
+
 function game_back_to_menu()
 {
     // clear everything then go back to menu
     game_clear_battle_instances();
 
+	global.currentFight = 1;
     global.currentFloor = 1;
     global.gameState = GameState.MENU;
     global.debugText = "Returned to menu";
@@ -391,24 +420,66 @@ function game_spawn_enemy()
     );
 }
 
-function game_draw_background()
+function game_update_battle_background()
 {
-    // only draw the battle background while we are actually in the battle
-    // menu draws its own background in the GUI event
-    if (global.gameState != GameState.PRE_COMBAT && global.gameState != GameState.PLAYING && global.gameState != GameState.PAUSED && global.gameState != GameState.PAUSE_HELP)
+    var _layerName = "BattleBackground";
+
+    if (variable_struct_exists(global.config, "battleBackgroundLayer"))
+    {
+        _layerName = global.config.battleBackgroundLayer;
+    }
+
+    var _layerId = layer_get_id(_layerName);
+
+    if (_layerId == -1)
     {
         return;
     }
 
-    draw_set_colour(make_colour_rgb(18, 16, 24));
-    draw_rectangle(0, 0, room_width, room_height, false);
+    var _showBattleBg = game_should_show_battle_background();
+
+    layer_set_visible(_layerId, _showBattleBg);
+
+    if (!_showBattleBg)
+    {
+        return;
+    }
+
+    var _bgId = layer_background_get_id(_layerId);
+
+    if (_bgId == -1)
+    {
+        return;
+    }
+
+    var _spr = spr_floor_background;
+
+    if (game_is_top_floor())
+    {
+        _spr = spr_top_floor;
+    }
+
+    layer_background_sprite(_bgId, _spr);
 }
 
-function game_draw_lanes()
+function game_should_show_battle_background()
 {
-    // not drawing lane/movement guide lines anymore
-    if (global.gameState != GameState.PRE_COMBAT && global.gameState != GameState.PLAYING && global.gameState != GameState.PAUSED && global.gameState != GameState.PAUSE_HELP)
+    return global.gameState == GameState.PRE_COMBAT
+        || global.gameState == GameState.PLAYING
+        || global.gameState == GameState.PAUSED
+        || global.gameState == GameState.PAUSE_HELP
+        || global.gameState == GameState.WON
+        || global.gameState == GameState.LOST;
+}
+
+function game_is_top_floor()
+{
+    var _topFloorStart = 9;
+
+    if (variable_struct_exists(global.config, "topFloorStart"))
     {
-        return;
+        _topFloorStart = global.config.topFloorStart;
     }
+
+    return global.currentFloor >= _topFloorStart;
 }

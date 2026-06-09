@@ -43,8 +43,8 @@ enum EnemyType
     GOBLIN,
 	NOSY_AUNT,
     VEXATIOUS_FAIRY,
-    BUTLER_ONE,
-    BUTLER_TWO,
+    BUTLER_WHITE,
+    BUTLER_BLACK,
     BREAKNECK_GOLEM,
     TRAINED_DUMMY,
     NECROMANCER_ONE,
@@ -80,9 +80,16 @@ function PrototypeConfig() constructor
     // start around the middle of the fight area
     wizardY = laneMiddleY;
 
-	// actual fight count, not story stage count
-	// butlers and necromancer use extra entries for phases
-	maxFloor = 11;
+    // story floor count
+    maxFloor = 8;
+
+    // actual fight count, including phase fights
+    // butlers and necromancer use extra entries for phases
+    maxFight = 11;
+
+    // background layers
+    battleBackgroundLayer = "BattleBackground";
+    topFloorStart = 8;
 	
 	// toggle for quickly testing floor flow
 	debugInstaDefeat = true;

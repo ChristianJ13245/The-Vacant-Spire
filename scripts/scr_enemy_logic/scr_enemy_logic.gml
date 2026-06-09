@@ -2,7 +2,7 @@
 
 function enemy_create()
 {
-    enemyType = enemy_type_from_floor(global.currentFloor);
+    enemyType = enemy_type_from_fight(global.currentFight);
     enemyConfig = enemy_get_config(enemyType);
 
     maxHealth = enemyConfig.maxHealth;
@@ -57,12 +57,27 @@ function enemy_create()
     sprAttack = enemy_get_sprite(enemyConfig.attackSpriteName);
     sprFace = enemy_get_sprite(enemyConfig.faceSpriteName);
 
+    // phase intro sprites are mainly for the butlers
+    sprStartIdle = enemy_get_sprite(enemyConfig.startIdleSpriteName);
+    sprPhaseTransition = enemy_get_sprite(enemyConfig.phaseTransitionSpriteName);
+
+    phaseIntroStarted = false;
+    phaseIntroDone = sprPhaseTransition == -1;
+    phaseIntroHoldTimer = 8;
+
     // start idle
-    drawSprite = sprIdle;
+    if (sprStartIdle != -1)
+    {
+        drawSprite = sprStartIdle;
+    }
+    else
+    {
+        drawSprite = sprIdle;
+    }
+
     drawFrame = 0;
     animTick = 0;
 }
-
 
 function enemy_step()
 {
@@ -75,6 +90,11 @@ function enemy_step()
 	{
 		currentHealth = 0;
 	}
+
+    if (enemy_update_phase_intro())
+    {
+        return;
+    }
 
     enemy_move_basic();
 
@@ -107,16 +127,16 @@ function enemy_step()
     }
 }
 
-function enemy_type_from_floor(_floor)
+function enemy_type_from_fight(_fight)
 {
-    switch (_floor)
+    switch (_fight)
     {
         case 1: return EnemyType.TRAINING_DUMMY;
         case 2: return EnemyType.GOBLIN;
         case 3: return EnemyType.NOSY_AUNT;
         case 4: return EnemyType.VEXATIOUS_FAIRY;
-        case 5: return EnemyType.BUTLER_ONE;
-        case 6: return EnemyType.BUTLER_TWO;
+        case 5: return EnemyType.BUTLER_WHITE;
+        case 6: return EnemyType.BUTLER_BLACK;
         case 7: return EnemyType.BREAKNECK_GOLEM;
         case 8: return EnemyType.TRAINED_DUMMY;
         case 9: return EnemyType.NECROMANCER_ONE;
@@ -151,7 +171,9 @@ function enemy_get_config(_enemyType)
                 dodgeChance: 0,
                 idleSpriteName: "spr_training_dummy_idle",
                 attackSpriteName: "spr_training_dummy_attack",
-                faceSpriteName: "spr_training_dummy_face"
+                faceSpriteName: "spr_training_dummy_face",
+                startIdleSpriteName: "",
+                phaseTransitionSpriteName: ""
             };
 
         case EnemyType.GOBLIN:
@@ -174,7 +196,9 @@ function enemy_get_config(_enemyType)
                 dodgeChance: 0,
                 idleSpriteName: "spr_goblin_idle",
                 attackSpriteName: "spr_goblin_attack",
-                faceSpriteName: "spr_goblin_face"
+                faceSpriteName: "spr_goblin_face",
+                startIdleSpriteName: "",
+                phaseTransitionSpriteName: ""
             };
 
         case EnemyType.NOSY_AUNT:
@@ -197,7 +221,9 @@ function enemy_get_config(_enemyType)
                 dodgeChance: 0,
                 idleSpriteName: "spr_aunt_rose_idle",
                 attackSpriteName: "spr_aunt_rose_attack",
-                faceSpriteName: "spr_aunt_rose_face"
+                faceSpriteName: "spr_aunt_rose_face",
+                startIdleSpriteName: "",
+                phaseTransitionSpriteName: ""
             };
 
         case EnemyType.VEXATIOUS_FAIRY:
@@ -220,18 +246,20 @@ function enemy_get_config(_enemyType)
                 dodgeChance: 28,
                 idleSpriteName: "spr_fairy_idle",
                 attackSpriteName: "spr_fairy_attack",
-                faceSpriteName: "spr_fairy_face"
+                faceSpriteName: "spr_fairy_face",
+                startIdleSpriteName: "",
+                phaseTransitionSpriteName: ""
             };
 
-        case EnemyType.BUTLER_ONE:
+        case EnemyType.BUTLER_WHITE:
             return {
-                displayName: "The Indecisive Butler",
+                displayName: "The Indecisive Twin Butlers",
                 stageNumber: 5,
                 phaseNumber: 1,
                 phaseCount: 2,
                 maxHealth: 90,
                 damageScale: 1,
-                bodyColour: make_colour_rgb(120, 120, 170),
+                bodyColour: make_colour_rgb(230, 230, 230),
                 moveSpeed: 2.1,
                 moveThinkDelay: 0.7,
                 moveFollowChance: 50,
@@ -241,20 +269,22 @@ function enemy_get_config(_enemyType)
                 shieldChance: 0,
                 fakeOutChance: 0,
                 dodgeChance: 0,
-                idleSpriteName: "spr_butler_one_idle",
-                attackSpriteName: "spr_butler_one_attack",
-                faceSpriteName: "spr_butler_one_face"
+                idleSpriteName: "spr_butler_white_idle",
+                attackSpriteName: "spr_butler_white_attack",
+                faceSpriteName: "spr_butler_face",
+                startIdleSpriteName: "spr_butler_mix_idle",
+                phaseTransitionSpriteName: "spr_butler_mix_to_white"
             };
 
-        case EnemyType.BUTLER_TWO:
+        case EnemyType.BUTLER_BLACK:
             return {
-                displayName: "The Other Indecisive Butler",
+                displayName: "The Indecisive Twin Butlers",
                 stageNumber: 5,
                 phaseNumber: 2,
                 phaseCount: 2,
                 maxHealth: 90,
                 damageScale: 1,
-                bodyColour: make_colour_rgb(110, 110, 160),
+                bodyColour: make_colour_rgb(40, 40, 50),
                 moveSpeed: 2.4,
                 moveThinkDelay: 0.55,
                 moveFollowChance: 60,
@@ -264,9 +294,11 @@ function enemy_get_config(_enemyType)
                 shieldChance: 0,
                 fakeOutChance: 0,
                 dodgeChance: 0,
-                idleSpriteName: "spr_butler_two_idle",
-                attackSpriteName: "spr_butler_two_attack",
-                faceSpriteName: "spr_butler_two_face"
+                idleSpriteName: "spr_butler_black_idle",
+                attackSpriteName: "spr_butler_black_attack",
+                faceSpriteName: "spr_butler_face",
+                startIdleSpriteName: "spr_butler_white_idle",
+                phaseTransitionSpriteName: "spr_butler_white_to_black"
             };
 
         case EnemyType.BREAKNECK_GOLEM:
@@ -289,13 +321,15 @@ function enemy_get_config(_enemyType)
                 dodgeChance: 0,
                 idleSpriteName: "spr_golem_idle",
                 attackSpriteName: "spr_golem_attack",
-                faceSpriteName: "spr_golem_face"
+                faceSpriteName: "spr_golem_face",
+                startIdleSpriteName: "",
+                phaseTransitionSpriteName: ""
             };
 
         case EnemyType.TRAINED_DUMMY:
             return {
                 displayName: "Steve Trained Dummy",
-                stageNumber: 8,
+                stageNumber: 7,
                 phaseNumber: 1,
                 phaseCount: 1,
                 maxHealth: 120,
@@ -310,15 +344,17 @@ function enemy_get_config(_enemyType)
                 shieldChance: 0,
                 fakeOutChance: 0,
                 dodgeChance: 0,
-                idleSpriteName: "spr_training_dummy_idle",
-                attackSpriteName: "spr_training_dummy_attack",
-                faceSpriteName: "spr_training_dummy_face"
+                idleSpriteName: "spr_trained_dummy_idle",
+                attackSpriteName: "spr_trained_dummy_attack",
+                faceSpriteName: "spr_trained_dummy_face",
+                startIdleSpriteName: "",
+                phaseTransitionSpriteName: ""
             };
 
         case EnemyType.NECROMANCER_ONE:
             return {
                 displayName: "The Necromancer",
-                stageNumber: 9,
+                stageNumber: 8,
                 phaseNumber: 1,
                 phaseCount: 3,
                 maxHealth: 120,
@@ -335,13 +371,15 @@ function enemy_get_config(_enemyType)
                 dodgeChance: 0,
                 idleSpriteName: "spr_necromancer_idle",
                 attackSpriteName: "spr_necromancer_attack",
-                faceSpriteName: "spr_necromancer_face"
+                faceSpriteName: "spr_necromancer_face",
+                startIdleSpriteName: "",
+                phaseTransitionSpriteName: ""
             };
 
         case EnemyType.NECROMANCER_TWO:
             return {
                 displayName: "The Necromancer",
-                stageNumber: 9,
+                stageNumber: 8,
                 phaseNumber: 2,
                 phaseCount: 3,
                 maxHealth: 140,
@@ -358,13 +396,15 @@ function enemy_get_config(_enemyType)
                 dodgeChance: 0,
                 idleSpriteName: "spr_necromancer_idle",
                 attackSpriteName: "spr_necromancer_attack",
-                faceSpriteName: "spr_necromancer_face"
+                faceSpriteName: "spr_necromancer_face",
+                startIdleSpriteName: "",
+                phaseTransitionSpriteName: ""
             };
 
         case EnemyType.NECROMANCER_THREE:
             return {
                 displayName: "The Necromancer",
-                stageNumber: 9,
+                stageNumber: 8,
                 phaseNumber: 3,
                 phaseCount: 3,
                 maxHealth: 170,
@@ -381,7 +421,9 @@ function enemy_get_config(_enemyType)
                 dodgeChance: 20,
                 idleSpriteName: "spr_necromancer_idle",
                 attackSpriteName: "spr_necromancer_attack",
-                faceSpriteName: "spr_necromancer_face"
+                faceSpriteName: "spr_necromancer_face",
+                startIdleSpriteName: "",
+                phaseTransitionSpriteName: ""
             };
     }
 
@@ -390,6 +432,11 @@ function enemy_get_config(_enemyType)
 
 function enemy_get_sprite(_spriteName)
 {
+    if (_spriteName == "")
+    {
+        return -1;
+    }
+
     return asset_get_index(_spriteName);
 }
 
@@ -516,6 +563,63 @@ function enemy_draw_debug_hitbox()
     );
 
     draw_set_alpha(1);
+}
+
+function enemy_update_phase_intro()
+{
+    if (phaseIntroDone)
+    {
+        return false;
+    }
+
+    if (sprPhaseTransition == -1)
+    {
+        phaseIntroDone = true;
+        enemy_set_idle_animation();
+        return false;
+    }
+
+    if (!phaseIntroStarted)
+    {
+        phaseIntroStarted = true;
+        drawSprite = sprPhaseTransition;
+        drawFrame = 0;
+        animTick = 0;
+        return true;
+    }
+
+    var _frameCount = sprite_get_number(drawSprite);
+
+    if (_frameCount <= 1)
+    {
+        phaseIntroDone = true;
+        enemy_set_idle_animation();
+        return false;
+    }
+
+    animTick += 1;
+
+    if (animTick >= castFrameDelay)
+    {
+        animTick = 0;
+
+        if (drawFrame < _frameCount - 1)
+        {
+            drawFrame += 1;
+        }
+        else
+        {
+            phaseIntroHoldTimer -= 1;
+
+            if (phaseIntroHoldTimer <= 0)
+            {
+                phaseIntroDone = true;
+                enemy_set_idle_animation();
+            }
+        }
+    }
+
+    return true;
 }
 
 function enemy_update_animation()
@@ -685,6 +789,7 @@ function enemy_cast_spell(_spellInfo)
 	{
 		_spell.damage *= damageScale;
 	}
+
     global.debugText = "Enemy cast " + spell_info_to_text(_spellInfo);
 }
 
@@ -692,7 +797,7 @@ function enemy_die()
 {
     isDead = true;
 
-    if (global.currentFloor < global.config.maxFloor)
+    if (global.currentFight < global.config.maxFight)
     {
         game_advance_floor();
         return;
