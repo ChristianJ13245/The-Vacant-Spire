@@ -15,7 +15,7 @@
     "path": "audiogroups/audiogroup_default",
   },
   "soundFile": "snd_battle_music.mp3",
-  "duration": 148.29715,
+  "duration": 213.23755,
   "parent": {
     "name": "Sounds",
     "path": "folders/Sounds.yy",

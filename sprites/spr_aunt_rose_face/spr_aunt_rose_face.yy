@@ -29,6 +29,8 @@
   "gridY": 0,
   "frames": [
     {"resourceType":"GMSpriteFrame","resourceVersion":"1.1","name":"8311fb2b-9115-4375-b38a-5bbb88f4bb80",},
+    {"resourceType":"GMSpriteFrame","resourceVersion":"1.1","name":"be877cb9-8a3b-4cdb-9a67-a21fe9fd2821",},
+    {"resourceType":"GMSpriteFrame","resourceVersion":"1.1","name":"edaad903-1773-43d8-bf30-db284f4fa23d",},
   ],
   "sequence": {
     "resourceType": "GMSequence",
@@ -36,16 +38,18 @@
     "name": "spr_aunt_rose_face",
     "timeUnits": 1,
     "playback": 1,
-    "playbackSpeed": 30.0,
+    "playbackSpeed": 15.0,
     "playbackSpeedType": 0,
     "autoRecord": true,
     "volume": 1.0,
-    "length": 1.0,
+    "length": 3.0,
     "events": {"Keyframes":[],"resourceVersion":"1.0","resourceType":"KeyframeStore<MessageEventKeyframe>",},
     "moments": {"Keyframes":[],"resourceVersion":"1.0","resourceType":"KeyframeStore<MomentsEventKeyframe>",},
     "tracks": [
       {"resourceType":"GMSpriteFramesTrack","resourceVersion":"1.0","name":"frames","spriteId":null,"keyframes":{"Keyframes":[
             {"id":"f6a8f3cc-3d2b-48f0-8990-55a38fff2a8d","Key":0.0,"Length":1.0,"Stretch":false,"Disabled":false,"IsCreationKey":false,"Channels":{"0":{"Id":{"name":"8311fb2b-9115-4375-b38a-5bbb88f4bb80","path":"sprites/spr_aunt_rose_face/spr_aunt_rose_face.yy",},"resourceVersion":"1.0","resourceType":"SpriteFrameKeyframe",},},"resourceVersion":"1.0","resourceType":"Keyframe<SpriteFrameKeyframe>",},
+            {"id":"abb71d5c-689f-4198-bf26-aba2e726b3d0","Key":1.0,"Length":1.0,"Stretch":false,"Disabled":false,"IsCreationKey":false,"Channels":{"0":{"Id":{"name":"be877cb9-8a3b-4cdb-9a67-a21fe9fd2821","path":"sprites/spr_aunt_rose_face/spr_aunt_rose_face.yy",},"resourceVersion":"1.0","resourceType":"SpriteFrameKeyframe",},},"resourceVersion":"1.0","resourceType":"Keyframe<SpriteFrameKeyframe>",},
+            {"id":"ed2effd0-9006-491a-b644-c73e64cdf3aa","Key":2.0,"Length":1.0,"Stretch":false,"Disabled":false,"IsCreationKey":false,"Channels":{"0":{"Id":{"name":"edaad903-1773-43d8-bf30-db284f4fa23d","path":"sprites/spr_aunt_rose_face/spr_aunt_rose_face.yy",},"resourceVersion":"1.0","resourceType":"SpriteFrameKeyframe",},},"resourceVersion":"1.0","resourceType":"Keyframe<SpriteFrameKeyframe>",},
           ],"resourceVersion":"1.0","resourceType":"KeyframeStore<SpriteFrameKeyframe>",},"trackColour":0,"inheritsTrackColour":true,"builtinName":0,"traits":0,"interpolation":1,"tracks":[],"events":[],"isCreationTrack":false,"modifiers":[],},
     ],
     "visibleRange": null,
