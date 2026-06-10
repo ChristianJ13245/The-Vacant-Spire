@@ -12,13 +12,13 @@ function audio_manager_create()
         battleMusic: snd_battle_music,
 
         // sound effect assets, not imported yet but can change asset names on import
-        spellCast: snd_spell_cast,
-        spellHit: snd_spell_hit,
-        spellCollision: snd_spell_collision,
-        hurt: snd_hurt,
-        buttonClick: snd_button_click,
-        buttonHover: snd_button_hover,
-        jump: snd_jump,
+        //spellCast: snd_spell_cast,
+        //spellHit: snd_spell_hit,
+        //spellCollision: snd_spell_collision,
+        //hurt: snd_hurt,
+        //buttonClick: snd_button_click,
+        //buttonHover: snd_button_hover,
+        //jump: snd_jump,
 
         // volumes
         menuVolume: 0.65,
