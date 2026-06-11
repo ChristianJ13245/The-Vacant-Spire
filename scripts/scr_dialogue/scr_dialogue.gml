@@ -60,9 +60,6 @@ function dialogue_get_fight_intro(_fight)
 
 		case 10:
 			return "empty for now until script is done";
-
-		case 11:
-			return "empty for now until script is done";
 	}
 
 	return "Click to skip text, then click again to start.";

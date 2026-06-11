@@ -22,6 +22,9 @@ function spell_create()
 
     // Spells should not do ANYTHING until properly spawned
     isInitialized = false;
+    isMegaSpell = false;
+    drawScaleOverride = -1;
+    hitRadiusOverride = -1;
 
     // animation
     image_index = 0;
@@ -128,6 +131,11 @@ function spell_draw()
 
 function spell_get_draw_scale()
 {
+    if (drawScaleOverride > 0)
+    {
+        return drawScaleOverride;
+    }
+
     var _scale = 1;
 
     if (powerValue == 2)
@@ -177,6 +185,14 @@ function spell_get_instance_hit_radius(_spellInst)
     if (!instance_exists(_spellInst))
     {
         return 8;
+    }
+
+    if (variable_instance_exists(_spellInst, "hitRadiusOverride"))
+    {
+        if (_spellInst.hitRadiusOverride > 0)
+        {
+            return _spellInst.hitRadiusOverride;
+        }
     }
 
     var _spr = -1;
@@ -403,6 +419,11 @@ function spell_resolve_collision(_spellA, _spellB)
     var _elementA = _spellA.spellElement;
     var _elementB = _spellB.spellElement;
 
+    if (_spellA.isMegaSpell || _spellB.isMegaSpell)
+    {
+        return spell_resolve_mega_collision(_spellA, _spellB);
+    }
+
     // same power and same element means both disappear
     if (_powerA == _powerB && _elementA == _elementB)
     {
@@ -446,6 +467,42 @@ function spell_resolve_collision(_spellA, _spellB)
     }
 
     spell_reduce_power_after_clash(_spellB, _powerA);
+    return 2;
+}
+
+function spell_resolve_mega_collision(_spellA, _spellB)
+{
+    var _megaSpell = _spellA;
+    var _otherSpell = _spellB;
+
+    if (_spellB.isMegaSpell)
+    {
+        _megaSpell = _spellB;
+        _otherSpell = _spellA;
+    }
+
+    if (_spellA.isMegaSpell && _spellB.isMegaSpell)
+    {
+        return 0;
+    }
+
+    var _otherCounters = spell_compare_elements(_otherSpell.spellElement, _megaSpell.spellElement) == 1;
+
+    if (_otherCounters)
+    {
+        spell_reduce_power_after_clash(_megaSpell, _otherSpell.powerValue);
+
+        if (!instance_exists(_megaSpell))
+        {
+            return 0;
+        }
+    }
+
+    if (_megaSpell == _spellA)
+    {
+        return 1;
+    }
+
     return 2;
 }
 
@@ -495,8 +552,31 @@ function spell_reduce_power_after_clash(_spell, _amount)
         else
         {
             spellPower = spell_value_to_power(powerValue);
-            spell_refresh_stats_from_power(id);
+
+            if (isMegaSpell)
+            {
+                spell_refresh_mega_spell(id);
+            }
+            else
+            {
+                spell_refresh_stats_from_power(id);
+            }
         }
+    }
+}
+
+function spell_refresh_mega_spell(_spell)
+{
+    if (!instance_exists(_spell))
+    {
+        return;
+    }
+
+    with (_spell)
+    {
+        drawScaleOverride = max(1.4, 1.2 + (powerValue * 0.5));
+        hitRadiusOverride = max(20, 16 + (powerValue * 6));
+        radius = hitRadiusOverride;
     }
 }
 

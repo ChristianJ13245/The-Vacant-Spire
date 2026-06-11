@@ -13,6 +13,7 @@ function game_create()
     global.enemy = noone;
     global.activeDialogue = noone;
     global.preCombatTimer = 0;
+    global.preCombatDialogueStarted = false;
     global.floorTransitionPhase = 0;
     global.floorTransitionTimer = 0;
     global.floorTransitionCoverAmount = 0;
@@ -23,6 +24,12 @@ function game_create()
 
 function game_step()
 {
+    if (game_step_debug_shortcuts())
+    {
+        game_update_battle_background();
+        return;
+    }
+
     // Only one state should run each frame to avoid conflicts
     // with game being paused and played at the same time
     switch (global.gameState)
@@ -62,6 +69,40 @@ function game_step()
     }
 
     game_update_battle_background();
+}
+
+function game_step_debug_shortcuts()
+{
+    if (!global.config.debugInstaDefeat)
+    {
+        return false;
+    }
+
+    if (keyboard_check_pressed(ord("9")))
+    {
+        game_debug_skip_to_necromancer();
+        return true;
+    }
+
+    return false;
+}
+
+function game_debug_skip_to_necromancer()
+{
+    // 9 jumps to necro so testing doesnt take forever
+    game_clear_battle_instances();
+
+    global.currentFight = 9;
+    global.currentFloor = game_floor_from_fight(global.currentFight);
+    global.gameState = GameState.PRE_COMBAT;
+    global.preCombatTimer = room_speed * 0.5;
+    global.preCombatDialogueStarted = false;
+    global.floorTransitionPhase = 0;
+    global.floorTransitionTimer = 0;
+    global.floorTransitionCoverAmount = 0;
+
+    game_spawn_player();
+    game_spawn_enemy();
 }
 
 function game_step_menu()
@@ -115,6 +156,17 @@ function game_step_help(_backState)
 
 function game_step_pre_combat()
 {
+    if (!global.preCombatDialogueStarted)
+    {
+        if (game_step_pre_combat_intro())
+        {
+            return;
+        }
+
+        game_start_pre_combat_dialogue();
+        return;
+    }
+
     // wait until the dialogue box is gone, then give combat a tiny beat
     if (instance_exists(global.activeDialogue))
     {
@@ -128,6 +180,31 @@ function game_step_pre_combat()
     }
 
     global.gameState = GameState.PLAYING;
+}
+
+function game_step_pre_combat_intro()
+{
+    if (!instance_exists(global.enemy))
+    {
+        return false;
+    }
+
+    if (!variable_instance_exists(global.enemy, "phaseIntroDone"))
+    {
+        return false;
+    }
+
+    if (global.enemy.phaseIntroDone)
+    {
+        return false;
+    }
+
+    with (global.enemy)
+    {
+        enemy_update_phase_intro();
+    }
+
+    return true;
 }
 
 function game_step_playing()
@@ -226,8 +303,8 @@ function game_step_floor_transition()
 
             global.gameState = GameState.PRE_COMBAT;
             global.preCombatTimer = room_speed * 0.5;
+            global.preCombatDialogueStarted = false;
             global.floorTransitionCoverAmount = 0;
-            game_start_pre_combat_dialogue();
         }
     }
 }
@@ -306,11 +383,11 @@ function game_start_new_run()
     global.currentFloor = game_floor_from_fight(global.currentFight);
     global.gameState = GameState.PRE_COMBAT;
     global.preCombatTimer = room_speed * 0.5;
+    global.preCombatDialogueStarted = false;
     global.floorTransitionCoverAmount = 0;
 
     game_spawn_player();
     game_spawn_enemy();
-    game_start_pre_combat_dialogue();
 }
 
 function game_start_pre_combat_dialogue()
@@ -326,6 +403,7 @@ function game_start_pre_combat_dialogue()
 
     // keep this here so object events dont need changing
     global.activeDialogue = dialogue_create(_boxX, _boxY, game_get_dialogue_layer(), _portraitSprite, _text, 3, 1, -1, _dialogueScale, 0.25, 12, _enemyName);
+    global.preCombatDialogueStarted = true;
 }
 
 function game_get_enemy_display_name()
@@ -420,10 +498,9 @@ function game_advance_same_floor_phase()
     global.currentFloor = game_floor_from_fight(global.currentFight);
     global.gameState = GameState.PRE_COMBAT;
     global.preCombatTimer = room_speed * 0.5;
+    global.preCombatDialogueStarted = false;
 
     game_spawn_enemy();
-
-    game_start_pre_combat_dialogue();
 }
 
 function game_reset_player_for_new_floor()
@@ -537,7 +614,6 @@ function game_floor_from_fight(_fight)
 
         case 9: return 8; // Necromancer phase 1
         case 10: return 8; // Necromancer phase 2
-        case 11: return 8; // Necromancer phase 3
     }
 
     return 1;

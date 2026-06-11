@@ -22,6 +22,17 @@ function enemy_create()
 	shieldChance = enemyConfig.shieldChance;
 	fakeOutChance = enemyConfig.fakeOutChance;
 	dodgeChance = enemyConfig.dodgeChance;
+	spellQuickChance = enemyConfig.spellQuickChance;
+	spellMediumChance = enemyConfig.spellMediumChance;
+    megaFireballChance = 0;
+    megaFireballCooldownTime = 0;
+    megaFireballCooldownTimer = 0;
+
+    if (variable_struct_exists(enemyConfig, "megaFireballChance"))
+    {
+        megaFireballChance = enemyConfig.megaFireballChance;
+        megaFireballCooldownTime = enemyConfig.megaFireballCooldownTime;
+    }
 
     // movement
     moveSpeed = enemyConfig.moveSpeed;
@@ -66,6 +77,11 @@ function enemy_create()
     phaseIntroWaitTimer = room_speed * 0.75;
     phaseIntroHoldTimer = 8;
 
+    if (variable_struct_exists(enemyConfig, "phaseIntroWaitTime"))
+    {
+        phaseIntroWaitTimer = room_speed * enemyConfig.phaseIntroWaitTime;
+    }
+
     // start idle
     if (sprStartIdle != -1)
     {
@@ -97,7 +113,19 @@ function enemy_step()
         return;
     }
 
+    if (megaFireballCooldownTimer > 0)
+    {
+        megaFireballCooldownTimer -= 1;
+    }
+
     enemy_move_basic();
+
+    if (enemy_has_active_mega_fireball())
+    {
+        castTimer = 0;
+        enemy_update_animation();
+        return;
+    }
 
     // enemy casts on a timer
     castTimer += 1;
@@ -106,8 +134,15 @@ function enemy_step()
     {
         castTimer = 0;
 
-        var _spellInfo = enemy_choose_random_spell();
-        enemy_cast_spell(_spellInfo);
+        if (enemy_should_cast_mega_fireball())
+        {
+            enemy_cast_mega_fireball();
+        }
+        else
+        {
+            var _spellInfo = enemy_choose_random_spell();
+            enemy_cast_spell(_spellInfo);
+        }
     }
 
     enemy_update_animation();
@@ -142,7 +177,6 @@ function enemy_type_from_fight(_fight)
         case 8: return EnemyType.TRAINED_DUMMY;
         case 9: return EnemyType.NECROMANCER_ONE;
         case 10: return EnemyType.NECROMANCER_TWO;
-        case 11: return EnemyType.NECROMANCER_THREE;
     }
 
     return EnemyType.GOBLIN;
@@ -170,6 +204,8 @@ function enemy_get_config(_enemyType)
                 shieldChance: 0,
                 fakeOutChance: 0,
                 dodgeChance: 0,
+                spellQuickChance: 100,
+                spellMediumChance: 0,
                 idleSpriteName: "spr_training_dummy_idle",
                 attackSpriteName: "spr_training_dummy_attack",
                 faceSpriteName: "spr_training_dummy_face",
@@ -195,6 +231,8 @@ function enemy_get_config(_enemyType)
                 shieldChance: 0,
                 fakeOutChance: 0,
                 dodgeChance: 0,
+                spellQuickChance: 80,
+                spellMediumChance: 20,
                 idleSpriteName: "spr_goblin_idle",
                 attackSpriteName: "spr_goblin_attack",
                 faceSpriteName: "spr_goblin_face",
@@ -214,12 +252,14 @@ function enemy_get_config(_enemyType)
                 moveSpeed: 2.2,
                 moveThinkDelay: 0.7,
                 moveFollowChance: 75,
-                castDelay: 2,
+                castDelay: 2.3,
                 predictionChance: 0,
                 buffedSpellChance: 0,
                 shieldChance: 0,
                 fakeOutChance: 0,
                 dodgeChance: 0,
+                spellQuickChance: 60,
+                spellMediumChance: 40,
                 idleSpriteName: "spr_aunt_rose_idle",
                 attackSpriteName: "spr_aunt_rose_attack",
                 faceSpriteName: "spr_aunt_rose_face",
@@ -233,18 +273,20 @@ function enemy_get_config(_enemyType)
                 stageNumber: 4,
                 phaseNumber: 1,
                 phaseCount: 1,
-                maxHealth: 75,
-                damageScale: 0.85,
+                maxHealth: 70,
+                damageScale: 0.75,
                 bodyColour: make_colour_rgb(180, 240, 255),
-                moveSpeed: 3.2,
-                moveThinkDelay: 0.45,
+                moveSpeed: 2.7,
+                moveThinkDelay: 0.65,
                 moveFollowChance: 35,
-                castDelay: 1,
+                castDelay: 1.7,
                 predictionChance: 0,
                 buffedSpellChance: 0,
                 shieldChance: 0,
                 fakeOutChance: 0,
-                dodgeChance: 28,
+                dodgeChance: 12,
+                spellQuickChance: 70,
+                spellMediumChance: 30,
                 idleSpriteName: "spr_fairy_idle",
                 attackSpriteName: "spr_fairy_attack",
                 faceSpriteName: "spr_fairy_face",
@@ -270,6 +312,8 @@ function enemy_get_config(_enemyType)
                 shieldChance: 0,
                 fakeOutChance: 0,
                 dodgeChance: 0,
+                spellQuickChance: 50,
+                spellMediumChance: 45,
                 idleSpriteName: "spr_butler_white_idle",
                 attackSpriteName: "spr_butler_white_attack",
                 faceSpriteName: "spr_butler_face",
@@ -295,6 +339,8 @@ function enemy_get_config(_enemyType)
                 shieldChance: 0,
                 fakeOutChance: 0,
                 dodgeChance: 0,
+                spellQuickChance: 45,
+                spellMediumChance: 45,
                 idleSpriteName: "spr_butler_black_idle",
                 attackSpriteName: "spr_butler_black_attack",
                 faceSpriteName: "spr_butler_face",
@@ -309,7 +355,7 @@ function enemy_get_config(_enemyType)
                 phaseNumber: 1,
                 phaseCount: 1,
                 maxHealth: 150,
-                damageScale: 1.35,
+                damageScale: 1.25,
                 bodyColour: make_colour_rgb(130, 130, 130),
                 moveSpeed: 1.4,
                 moveThinkDelay: 0.9,
@@ -317,9 +363,11 @@ function enemy_get_config(_enemyType)
                 castDelay: 3,
                 predictionChance: 0,
                 buffedSpellChance: 0,
-                shieldChance: 25,
+                shieldChance: 20,
                 fakeOutChance: 0,
                 dodgeChance: 0,
+                spellQuickChance: 30,
+                spellMediumChance: 50,
                 idleSpriteName: "spr_golem_idle",
                 attackSpriteName: "spr_golem_attack",
                 faceSpriteName: "spr_golem_face",
@@ -339,12 +387,14 @@ function enemy_get_config(_enemyType)
                 moveSpeed: 1.6,
                 moveThinkDelay: 0.65,
                 moveFollowChance: 50,
-                castDelay: 1,
-                predictionChance: 45,
-                buffedSpellChance: 35,
+                castDelay: 1.5,
+                predictionChance: 35,
+                buffedSpellChance: 25,
                 shieldChance: 0,
                 fakeOutChance: 0,
                 dodgeChance: 0,
+                spellQuickChance: 40,
+                spellMediumChance: 45,
                 idleSpriteName: "spr_trained_dummy_idle",
                 attackSpriteName: "spr_trained_dummy_attack",
                 faceSpriteName: "spr_trained_dummy_face",
@@ -357,19 +407,21 @@ function enemy_get_config(_enemyType)
                 displayName: "The Necromancer",
                 stageNumber: 8,
                 phaseNumber: 1,
-                phaseCount: 3,
-                maxHealth: 120,
-                damageScale: 1.15,
+                phaseCount: 2,
+                maxHealth: 115,
+                damageScale: 1.1,
                 bodyColour: make_colour_rgb(90, 40, 120),
                 moveSpeed: 2.2,
                 moveThinkDelay: 0.6,
                 moveFollowChance: 65,
-                castDelay: 2,
-                predictionChance: 55,
-                buffedSpellChance: 30,
+                castDelay: 1.9,
+                predictionChance: 50,
+                buffedSpellChance: 20,
                 shieldChance: 0,
                 fakeOutChance: 0,
                 dodgeChance: 0,
+                spellQuickChance: 40,
+                spellMediumChance: 45,
                 idleSpriteName: "spr_necromancer_1_idle",
                 attackSpriteName: "spr_necromancer_1_attack",
                 faceSpriteName: "spr_necromancer_1_face",
@@ -382,50 +434,31 @@ function enemy_get_config(_enemyType)
                 displayName: "The Necromancer",
                 stageNumber: 8,
                 phaseNumber: 2,
-                phaseCount: 3,
-                maxHealth: 140,
+                phaseCount: 2,
+                maxHealth: 150,
                 damageScale: 1.25,
                 bodyColour: make_colour_rgb(110, 35, 150),
                 moveSpeed: 2.5,
                 moveThinkDelay: 0.5,
                 moveFollowChance: 70,
-                castDelay: 2,
+                castDelay: 1.6,
                 predictionChance: 65,
-                buffedSpellChance: 40,
+                buffedSpellChance: 30,
                 shieldChance: 0,
-                fakeOutChance: 20,
+                fakeOutChance: 15,
                 dodgeChance: 0,
-                idleSpriteName: "spr_necromancer_idle",
-                attackSpriteName: "spr_necromancer_attack",
-                faceSpriteName: "spr_necromancer_face",
-                startIdleSpriteName: "",
-                phaseTransitionSpriteName: ""
+                spellQuickChance: 35,
+                spellMediumChance: 45,
+                idleSpriteName: "spr_necromancer_2_idle",
+                attackSpriteName: "spr_necromancer_2_attack",
+                faceSpriteName: "spr_necromancer_2_face",
+                startIdleSpriteName: "spr_necromancer_1_idle",
+                phaseTransitionSpriteName: "spr_necromancer_transform",
+                phaseIntroWaitTime: 0,
+                megaFireballChance: 35,
+                megaFireballCooldownTime: 7
             };
 
-        case EnemyType.NECROMANCER_THREE:
-            return {
-                displayName: "The Necromancer",
-                stageNumber: 8,
-                phaseNumber: 3,
-                phaseCount: 3,
-                maxHealth: 170,
-                damageScale: 1.35,
-                bodyColour: make_colour_rgb(140, 25, 180),
-                moveSpeed: 2.9,
-                moveThinkDelay: 0.45,
-                moveFollowChance: 75,
-                castDelay: 2,
-                predictionChance: 75,
-                buffedSpellChance: 45,
-                shieldChance: 0,
-                fakeOutChance: 25,
-                dodgeChance: 20,
-                idleSpriteName: "spr_necromancer_idle",
-                attackSpriteName: "spr_necromancer_attack",
-                faceSpriteName: "spr_necromancer_face",
-                startIdleSpriteName: "",
-                phaseTransitionSpriteName: ""
-            };
     }
 
     return enemy_get_config(EnemyType.GOBLIN);
@@ -716,7 +749,7 @@ function enemy_set_cast_animation()
 
 function enemy_choose_random_spell()
 {
-    var _spellPower = irandom(2);
+    var _spellPower = enemy_choose_spell_power();
     var _spellElement = irandom(2);
 
 	if (enemy_should_predict_player())
@@ -735,6 +768,54 @@ function enemy_choose_random_spell()
     }
 
     return new SpellData(_spellPower, _spellElement);
+}
+
+function enemy_choose_spell_power()
+{
+    var _roll = irandom(99);
+
+    if (_roll < spellQuickChance)
+    {
+        return SpellPower.QUICK;
+    }
+
+    if (_roll < spellQuickChance + spellMediumChance)
+    {
+        return SpellPower.MEDIUM;
+    }
+
+    return SpellPower.STRONG;
+}
+
+function enemy_should_cast_mega_fireball()
+{
+    if (megaFireballChance <= 0)
+    {
+        return false;
+    }
+
+    if (megaFireballCooldownTimer > 0)
+    {
+        return false;
+    }
+
+    return irandom(100) < megaFireballChance;
+}
+
+function enemy_has_active_mega_fireball()
+{
+    var _enemy = id;
+    var _found = false;
+
+    with (obj_spell)
+    {
+        if (owner == _enemy && isMegaSpell)
+        {
+            _found = true;
+        }
+    }
+
+    return _found;
 }
 
 function enemy_should_predict_player()
@@ -804,6 +885,41 @@ function enemy_cast_spell(_spellInfo)
 	{
 		_spell.damage *= damageScale;
 	}
+}
+
+function enemy_cast_mega_fireball()
+{
+    if (global.gameState != GameState.PLAYING)
+    {
+        return;
+    }
+
+    var _spellInfo = new SpellData(SpellPower.STRONG, SpellElement.FIRE);
+    var _spawnX = x + (facing * 70);
+    var _spawnY = y - 8;
+
+    enemy_set_cast_animation();
+
+    var _spell = spell_spawn(id, _spellInfo, _spawnX, _spawnY, facing);
+
+    if (instance_exists(_spell))
+    {
+        with (_spell)
+        {
+            isMegaSpell = true;
+            spellPower = SpellPower.STRONG;
+            spellElement = SpellElement.FIRE;
+            powerValue = 6;
+            moveSpeed = 1.25;
+            damage = 55;
+            radius = 52;
+            drawScaleOverride = 4.2;
+            hitRadiusOverride = 52;
+        }
+    }
+
+    megaFireballCooldownTimer = room_speed * megaFireballCooldownTime;
+    castTimer = -room_speed * 1.5;
 }
 
 function enemy_die()

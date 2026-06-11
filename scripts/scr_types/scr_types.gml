@@ -49,8 +49,7 @@ enum EnemyType
     BREAKNECK_GOLEM,
     TRAINED_DUMMY,
     NECROMANCER_ONE,
-    NECROMANCER_TWO,
-    NECROMANCER_THREE
+    NECROMANCER_TWO
 }
 
 // simple config object for the game
@@ -86,7 +85,7 @@ function PrototypeConfig() constructor
 
     // actual fight count, including phase fights
     // butlers and necromancer use extra entries for phases
-    maxFight = 11;
+    maxFight = 10;
 
     // background layers
     battleBackgroundLayer = "BattleBackground";
