@@ -406,7 +406,6 @@ function spell_resolve_collision(_spellA, _spellB)
     // same power and same element means both disappear
     if (_powerA == _powerB && _elementA == _elementB)
     {
-        global.debugText = "Spells cancelled";
         return 0;
     }
 
@@ -417,13 +416,11 @@ function spell_resolve_collision(_spellA, _spellB)
 
         if (_elementResult == 1)
         {
-            global.debugText = "Element clash won";
             return 1;
         }
 
         if (_elementResult == -1)
         {
-            global.debugText = "Element clash won";
             return 2;
         }
 
@@ -435,11 +432,9 @@ function spell_resolve_collision(_spellA, _spellB)
     {
         if (_powerA > _powerB)
         {
-            global.debugText = "Power clash won";
             return 1;
         }
 
-        global.debugText = "Power clash won";
         return 2;
     }
 
@@ -447,12 +442,10 @@ function spell_resolve_collision(_spellA, _spellB)
     if (_powerA > _powerB)
     {
         spell_reduce_power_after_clash(_spellA, _powerB);
-        global.debugText = "Spell power reduced";
         return 1;
     }
 
     spell_reduce_power_after_clash(_spellB, _powerA);
-    global.debugText = "Spell power reduced";
     return 2;
 }
 

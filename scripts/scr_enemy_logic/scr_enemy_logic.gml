@@ -804,8 +804,6 @@ function enemy_cast_spell(_spellInfo)
 	{
 		_spell.damage *= damageScale;
 	}
-
-    global.debugText = "Enemy cast " + spell_info_to_text(_spellInfo);
 }
 
 function enemy_die()
@@ -819,7 +817,8 @@ function enemy_die()
     }
 
     global.gameState = GameState.WON;
-    global.debugText = displayName + " defeated";
+    game_clear_spells();
+    game_clear_player_cast_state();
     instance_destroy();
 }
 
@@ -838,14 +837,12 @@ function enemy_take_damage(_amount)
 
     if (enemy_should_dodge())
     {
-        global.debugText = displayName + " dodged";
         return;
     }
 
     if (enemy_should_block())
     {
         _amount *= 0.5;
-        global.debugText = displayName + " blocked some damage";
     }
 
     currentHealth -= _amount;
@@ -854,8 +851,6 @@ function enemy_take_damage(_amount)
     {
         currentHealth = 0;
     }
-
-    global.debugText = displayName + " took " + string(round(_amount)) + " damage";
 }
 
 function enemy_should_dodge()

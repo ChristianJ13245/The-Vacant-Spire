@@ -7,6 +7,7 @@ enum GameState
     HELP,
     PRE_COMBAT,
     PLAYING,
+    FLOOR_TRANSITION,
     PAUSED,
     PAUSE_HELP,
     WON,

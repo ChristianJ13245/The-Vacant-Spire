@@ -42,6 +42,29 @@ function ui_draw()
             ui_draw_end_menu("You LOST, GET OUTTA HERE!");
         break;
     }
+
+    ui_draw_floor_transition_overlay();
+}
+
+function ui_draw_floor_transition_overlay()
+{
+    var _amount = clamp(global.floorTransitionCoverAmount, 0, 1);
+
+    if (_amount <= 0)
+    {
+        return;
+    }
+
+    var _guiW = display_get_gui_width();
+    var _guiH = display_get_gui_height();
+    var _step = 32;
+    var _maxSize = max(_guiW, _guiH);
+    var _size = ceil((_maxSize * _amount) / _step) * _step;
+    var _x = (_guiW - _size) * 0.5;
+    var _y = (_guiH - _size) * 0.5;
+
+    draw_set_colour(c_black);
+    draw_rectangle(_x, _y, _x + _size, _y + _size, false);
 }
 
 function ui_mouse_in_rect(_x, _y, _w, _h)

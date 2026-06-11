@@ -504,7 +504,6 @@ function player_cast_spell(_spellInfo)
     if (!player_has_enough_mana(_spellInfo.spellPower))
     {
         manaEmptyCooldownTimer = manaEmptyCooldownTime;
-        global.debugText = "Not enough mana";
         return false;
     }
 
@@ -521,8 +520,6 @@ function player_cast_spell(_spellInfo)
 
     spell_spawn(id, _spellInfo, _spawnX, _spawnY, facing);
 
-    global.debugText = "Player cast " + spell_info_to_text(_spellInfo);
-
     return true;
 }
 
@@ -530,7 +527,6 @@ function player_die()
 {
     isDead = true;
     global.gameState = GameState.LOST;
-    global.debugText = "Player defeated";
     instance_destroy();
 }
 
@@ -551,6 +547,4 @@ function player_take_damage(_amount)
 
 
 	audio_play_hurt();
-
-    global.debugText = "Player took " + string(_amount) + " damage";
 }

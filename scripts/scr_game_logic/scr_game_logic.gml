@@ -13,10 +13,9 @@ function game_create()
     global.enemy = noone;
     global.activeDialogue = noone;
     global.preCombatTimer = 0;
-
-    // Simple debug line
-    // see what the game controller is doing
-    global.debugText = "Game ready";
+    global.floorTransitionPhase = 0;
+    global.floorTransitionTimer = 0;
+    global.floorTransitionCoverAmount = 0;
 
     // shows the current spell setup on the HUD
     global.inputText = "";
@@ -42,6 +41,10 @@ function game_step()
 
         case GameState.PLAYING:
             game_step_playing();
+        break;
+
+        case GameState.FLOOR_TRANSITION:
+            game_step_floor_transition();
         break;
 
         case GameState.PAUSED:
@@ -125,7 +128,6 @@ function game_step_pre_combat()
     }
 
     global.gameState = GameState.PLAYING;
-    global.debugText = "Combat started";
 }
 
 function game_step_playing()
@@ -149,6 +151,84 @@ function game_step_playing()
     {
         global.gameState = GameState.WON;
         return;
+    }
+}
+
+function game_step_floor_transition()
+{
+    if (!instance_exists(global.player))
+    {
+        global.gameState = GameState.LOST;
+        return;
+    }
+
+    var _walkSpeed = 8;
+    var _wipeSpeed = 1 / 24;
+
+    if (global.floorTransitionPhase == 0)
+    {
+        game_set_player_transition_anim();
+        global.player.x += _walkSpeed;
+
+        if (global.player.x > room_width + 96)
+        {
+            global.floorTransitionPhase = 1;
+            global.floorTransitionTimer = 0;
+            global.floorTransitionCoverAmount = 0;
+        }
+
+        return;
+    }
+
+    if (global.floorTransitionPhase == 1)
+    {
+        global.floorTransitionCoverAmount += _wipeSpeed;
+
+        if (global.floorTransitionCoverAmount < 1)
+        {
+            return;
+        }
+
+        global.floorTransitionCoverAmount = 1;
+
+        global.currentFight += 1;
+        global.currentFloor = game_floor_from_fight(global.currentFight);
+
+        game_reset_player_for_new_floor();
+        game_spawn_enemy();
+        game_update_battle_background();
+
+        global.player.x = -96;
+        global.player.y = global.config.wizardY;
+        global.floorTransitionPhase = 2;
+        global.floorTransitionTimer = 18;
+        return;
+    }
+
+    if (global.floorTransitionPhase == 2)
+    {
+        if (global.floorTransitionTimer > 0)
+        {
+            global.floorTransitionTimer -= 1;
+            return;
+        }
+
+        global.floorTransitionCoverAmount = max(0, global.floorTransitionCoverAmount - _wipeSpeed);
+
+        game_set_player_transition_anim();
+        global.player.x += _walkSpeed;
+
+        if (global.player.x >= global.config.playerStartX)
+        {
+            global.player.x = global.config.playerStartX;
+            global.player.y = global.config.wizardY;
+            game_set_player_idle_anim();
+
+            global.gameState = GameState.PRE_COMBAT;
+            global.preCombatTimer = room_speed * 0.5;
+            global.floorTransitionCoverAmount = 0;
+            game_start_pre_combat_dialogue();
+        }
     }
 }
 
@@ -224,9 +304,9 @@ function game_start_new_run()
 
     global.currentFight = 1;
     global.currentFloor = game_floor_from_fight(global.currentFight);
-	global.gameState = GameState.PRE_COMBAT;
-    global.debugText = "Get ready";
+    global.gameState = GameState.PRE_COMBAT;
     global.preCombatTimer = room_speed * 0.5;
+    global.floorTransitionCoverAmount = 0;
 
     game_spawn_player();
     game_spawn_enemy();
@@ -292,7 +372,6 @@ function game_restart_floor()
     game_clear_battle_instances();
 
     global.gameState = GameState.PLAYING;
-    global.debugText = "Restarted floor";
 
     game_spawn_player();
     game_spawn_enemy();
@@ -300,11 +379,18 @@ function game_restart_floor()
 
 function game_advance_floor()
 {
-    // next enemy, same run
-    with (obj_spell)
+    var _nextFight = global.currentFight + 1;
+    var _nextFloor = game_floor_from_fight(_nextFight);
+
+    if (_nextFloor == global.currentFloor)
     {
-        instance_destroy();
+        game_advance_same_floor_phase();
+        return;
     }
+
+    // actual new floor, let the player walk there
+    game_clear_spells();
+    game_clear_player_cast_state();
 
     with (obj_enemy)
     {
@@ -312,20 +398,126 @@ function game_advance_floor()
     }
 
     global.enemy = noone;
-	global.currentFight += 1;
-    global.currentFloor = game_floor_from_fight(global.currentFight);
-    global.gameState = GameState.PRE_COMBAT;
-    global.debugText = "Floor " + string(global.currentFloor);
-    global.preCombatTimer = room_speed * 0.5;
+    global.gameState = GameState.FLOOR_TRANSITION;
+    global.floorTransitionPhase = 0;
+    global.floorTransitionTimer = 0;
+    global.floorTransitionCoverAmount = 0;
+}
 
-    if (instance_exists(global.player))
+function game_advance_same_floor_phase()
+{
+    // next phase, same floor
+    game_clear_spells();
+    game_clear_player_cast_state();
+
+    with (obj_enemy)
     {
-        global.player.x = global.config.playerStartX;
-        global.player.y = global.config.wizardY;
+        instance_destroy();
     }
 
+    global.enemy = noone;
+    global.currentFight += 1;
+    global.currentFloor = game_floor_from_fight(global.currentFight);
+    global.gameState = GameState.PRE_COMBAT;
+    global.preCombatTimer = room_speed * 0.5;
+
     game_spawn_enemy();
+
     game_start_pre_combat_dialogue();
+}
+
+function game_reset_player_for_new_floor()
+{
+    if (!instance_exists(global.player))
+    {
+        return;
+    }
+
+    global.player.currentHealth = global.player.maxHealth;
+    global.player.currentMana = global.player.maxMana;
+    global.player.isDead = false;
+    global.player.jumpOffset = 0;
+    global.player.jumpVelocity = 0;
+    global.player.isJumping = false;
+    global.player.jumpCount = 0;
+    game_clear_player_cast_state();
+}
+
+function game_set_player_transition_anim()
+{
+    if (!instance_exists(global.player))
+    {
+        return;
+    }
+
+    global.player.facing = 1;
+    game_clear_player_cast_state();
+
+    with (global.player)
+    {
+        if (variable_instance_exists(id, "drawSprite") && drawSprite != -1)
+        {
+            player_update_animation();
+        }
+    }
+}
+
+function game_clear_spells()
+{
+    with (obj_spell)
+    {
+        instance_destroy();
+    }
+}
+
+function game_clear_player_cast_state()
+{
+    if (!instance_exists(global.player))
+    {
+        return;
+    }
+
+    with (global.player)
+    {
+        if (variable_instance_exists(id, "isCharging"))
+        {
+            isCharging = false;
+        }
+
+        if (variable_instance_exists(id, "chargeFrames"))
+        {
+            chargeFrames = 0;
+        }
+
+        if (variable_instance_exists(id, "castTimer"))
+        {
+            castTimer = 0;
+        }
+
+        if (variable_instance_exists(id, "sprIdle"))
+        {
+            if (!variable_instance_exists(id, "drawSprite") || drawSprite != sprIdle)
+            {
+                player_set_idle_animation();
+            }
+        }
+    }
+}
+
+function game_set_player_idle_anim()
+{
+    if (!instance_exists(global.player))
+    {
+        return;
+    }
+
+    with (global.player)
+    {
+        if (variable_instance_exists(id, "sprIdle"))
+        {
+            player_set_idle_animation();
+        }
+    }
 }
 
 function game_floor_from_fight(_fight)
@@ -359,7 +551,7 @@ function game_back_to_menu()
 	global.currentFight = 1;
     global.currentFloor = 1;
     global.gameState = GameState.MENU;
-    global.debugText = "Returned to menu";
+    global.floorTransitionCoverAmount = 0;
 }
 
 function game_clear_battle_instances()
@@ -466,6 +658,7 @@ function game_should_show_battle_background()
 {
     return global.gameState == GameState.PRE_COMBAT
         || global.gameState == GameState.PLAYING
+        || global.gameState == GameState.FLOOR_TRANSITION
         || global.gameState == GameState.PAUSED
         || global.gameState == GameState.PAUSE_HELP
         || global.gameState == GameState.WON
