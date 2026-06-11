@@ -141,6 +141,7 @@ function player_update_jump()
         isJumping = true;
         jumpVelocity = jumpStrength;
         jumpCount += 1;
+		audio_play_sfx(global.audio.jump, 1, 1);
     }
 
     if (isJumping)
@@ -169,6 +170,11 @@ function player_draw()
 
 	if (_spr != -1)
 	{
+		// shadow under player
+		draw_set_alpha(0.2);
+		draw_ellipse_color(x - 50, _drawY - jumpOffset + 60, x + 50, _drawY - jumpOffset + 80, c_black, c_black, 0);
+		draw_set_alpha(1);
+		
 		// aura behind player
 		player_draw_aura(_spr, _drawY, _scale);
 
@@ -542,6 +548,9 @@ function player_take_damage(_amount)
     {
         currentHealth = 0;
     }
+
+
+	audio_play_hurt();
 
     global.debugText = "Player took " + string(_amount) + " damage";
 }

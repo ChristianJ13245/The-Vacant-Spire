@@ -15,10 +15,10 @@ function audio_manager_create()
         //spellCast: snd_spell_cast,
         //spellHit: snd_spell_hit,
         //spellCollision: snd_spell_collision,
-        //hurt: snd_hurt,
+        hurt: snd_hurt,
         //buttonClick: snd_button_click,
         //buttonHover: snd_button_hover,
-        //jump: snd_jump,
+        jump: snd_jump,
 
         // volumes
         menuVolume: 0.65,
@@ -89,10 +89,13 @@ function audio_start_music(_music)
         return;
     }
 
+    // added to stop music from stacking
+    audio_stop_music_assets();
+
     global.audio.currentMusic = _music;
     global.audio.currentVolume = 0;
 
-    global.audio.currentMusicId = audio_play_sound(global.audio.currentMusic, 10, true);
+    global.audio.currentMusicId = audio_play_sound(_music, 10, true);
     audio_sound_gain(global.audio.currentMusicId, global.audio.currentVolume, 0);
 }
 
@@ -103,15 +106,37 @@ function audio_switch_music(_music)
         return;
     }
 
+    // stop the tracked instance
     if (global.audio.currentMusicId != -1)
     {
         audio_stop_sound(global.audio.currentMusicId);
     }
 
+    audio_stop_music_assets();
+
     global.audio.currentMusicId = -1;
     global.audio.currentMusic = -1;
+    global.audio.currentVolume = 0;
 
     audio_start_music(_music);
+}
+
+function audio_stop_music_assets()
+{
+    if (!variable_global_exists("audio"))
+    {
+        return;
+    }
+
+    if (global.audio.menuMusic != -1)
+    {
+        audio_stop_sound(global.audio.menuMusic);
+    }
+
+    if (global.audio.battleMusic != -1)
+    {
+        audio_stop_sound(global.audio.battleMusic);
+    }
 }
 
 function audio_fade_music_volume()
