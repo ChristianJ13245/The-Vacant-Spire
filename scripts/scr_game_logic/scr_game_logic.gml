@@ -18,6 +18,10 @@ function game_create()
     global.floorTransitionTimer = 0;
     global.floorTransitionCoverAmount = 0;
     global.volumeSliderDrag = "";
+    global.wizardName = "";
+    global.storyStep = 0;
+    global.storyTimer = 0;
+    global.deniedDrop = -220;
 
     // shows the current spell setup on the HUD
     global.inputText = "";
@@ -43,6 +47,22 @@ function game_step()
             game_step_help(GameState.MENU);
         break;
 
+        case GameState.INTRO:
+            game_step_intro();
+        break;
+
+        case GameState.NAME_ENTRY:
+            game_step_name_entry();
+        break;
+
+        case GameState.LETTER:
+            game_step_letter();
+        break;
+
+        case GameState.ARRIVAL:
+            game_step_arrival();
+        break;
+
         case GameState.PRE_COMBAT:
             game_step_pre_combat();
         break;
@@ -61,6 +81,26 @@ function game_step()
 
         case GameState.PAUSE_HELP:
             game_step_help(GameState.PAUSED);
+        break;
+
+        case GameState.VICTORY_STORY:
+            game_step_victory_story();
+        break;
+
+        case GameState.CREDITS:
+            game_step_credits();
+        break;
+
+        case GameState.FINAL_ENDING:
+            game_step_FINAL_ENDING();
+        break;
+
+        case GameState.FINAL_CREDITS:
+            game_step_final_credits();
+        break;
+
+        case GameState.PHASE_TWO_DEFEAT:
+            game_step_phase_two_defeat();
         break;
 
         case GameState.WON:
@@ -85,6 +125,12 @@ function game_step_debug_shortcuts()
         return true;
     }
 
+    if (keyboard_check_pressed(ord("8")))
+    {
+        game_debug_skip_to_ending();
+        return true;
+    }
+
     return false;
 }
 
@@ -106,6 +152,20 @@ function game_debug_skip_to_necromancer()
     game_spawn_enemy();
 }
 
+function game_debug_skip_to_ending()
+{
+    // 8 jumps to the ending so we can check credits fast
+    game_clear_battle_instances();
+
+    global.currentFight = global.config.maxFight;
+    global.currentFloor = game_floor_from_fight(global.currentFight);
+    global.floorTransitionPhase = 0;
+    global.floorTransitionTimer = 0;
+    global.floorTransitionCoverAmount = 0;
+
+    game_start_victory_story();
+}
+
 function game_step_menu()
 {
     var _guiW = display_get_gui_width();
@@ -118,7 +178,7 @@ function game_step_menu()
     // button clicked, start the run
     if (ui_button_clicked(_buttonX, _buttonY, _buttonW, _buttonH))
     {
-        game_start_new_run();
+        game_start_intro();
         return;
     }
 
@@ -191,6 +251,193 @@ function game_step_help_volume_sliders()
     }
 }
 
+function game_start_intro()
+{
+    game_clear_battle_instances();
+
+    global.gameState = GameState.INTRO;
+    global.storyStep = 0;
+    global.storyTimer = 0;
+    global.deniedDrop = -220;
+    keyboard_string = "";
+}
+
+function game_step_intro()
+{
+    global.storyTimer += 1;
+
+    var _totalTime = room_speed * 7;
+
+    if (game_story_advance_pressed() || global.storyTimer >= _totalTime)
+    {
+        global.storyStep += 1;
+        global.storyTimer = 0;
+
+        if (global.storyStep >= 4)
+        {
+            global.gameState = GameState.NAME_ENTRY;
+            keyboard_string = "";
+        }
+    }
+}
+
+function game_step_name_entry()
+{
+    keyboard_string = string_copy(keyboard_string, 1, 18);
+
+    if (keyboard_check_pressed(vk_enter))
+    {
+        global.wizardName = keyboard_string;
+
+        if (string_length(global.wizardName) <= 0)
+        {
+            global.wizardName = "Wizard";
+        }
+
+        global.gameState = GameState.LETTER;
+        global.storyStep = 0;
+        global.storyTimer = 0;
+    }
+}
+
+function game_step_letter()
+{
+    global.storyTimer += 1;
+
+    var _guiW = display_get_gui_width();
+    var _buttonW = 220;
+    var _buttonH = 48;
+    var _buttonX = (_guiW - _buttonW) * 0.5;
+    var _buttonY = display_get_gui_height() - 76;
+
+    if (ui_button_clicked(_buttonX, _buttonY, _buttonW, _buttonH) || keyboard_check_pressed(vk_enter))
+    {
+        global.gameState = GameState.ARRIVAL;
+        global.storyStep = 0;
+        global.storyTimer = 0;
+    }
+}
+
+function game_step_arrival()
+{
+    global.storyTimer += 1;
+
+    if (game_story_advance_pressed() || global.storyTimer >= room_speed * 6)
+    {
+        game_start_new_run();
+    }
+}
+
+function game_story_advance_pressed()
+{
+    return mouse_check_button_pressed(mb_left)
+        || keyboard_check_pressed(vk_enter)
+        || keyboard_check_pressed(vk_space);
+}
+
+function game_start_victory_story()
+{
+    game_clear_spells();
+    game_clear_player_cast_state();
+
+    with (obj_enemy)
+    {
+        instance_destroy();
+    }
+
+    global.enemy = noone;
+    global.gameState = GameState.VICTORY_STORY;
+    global.storyStep = 0;
+    global.storyTimer = 0;
+}
+
+function game_step_victory_story()
+{
+    global.storyTimer += 1;
+
+    if (game_story_advance_pressed() || global.storyTimer >= room_speed * 12)
+    {
+        global.gameState = GameState.CREDITS;
+        global.storyTimer = 0;
+    }
+}
+
+function game_step_credits()
+{
+    global.storyTimer += 1;
+
+    if (game_story_advance_pressed() || global.storyTimer >= room_speed * 7)
+    {
+        global.gameState = GameState.FINAL_ENDING;
+        global.storyTimer = 0;
+        global.deniedDrop = -220;
+    }
+}
+
+function game_step_FINAL_ENDING()
+{
+    global.storyTimer += 1;
+
+    if (global.storyTimer > room_speed * 2)
+    {
+        global.deniedDrop = min(display_get_gui_height() * 0.28, global.deniedDrop + 14);
+    }
+
+    var _guiW = display_get_gui_width();
+    var _buttonW = 240;
+    var _buttonH = 52;
+    var _buttonX = (_guiW - _buttonW) * 0.5;
+    var _buttonY = display_get_gui_height() - 82;
+
+    if (global.deniedDrop >= display_get_gui_height() * 0.28
+    && ui_button_clicked(_buttonX, _buttonY, _buttonW, _buttonH))
+    {
+        global.gameState = GameState.FINAL_CREDITS;
+        global.storyTimer = 0;
+    }
+}
+
+function game_step_final_credits()
+{
+    global.storyTimer += 1;
+
+    var _guiW = display_get_gui_width();
+    var _buttonW = 240;
+    var _buttonH = 52;
+    var _buttonX = (_guiW - _buttonW) * 0.5;
+    var _buttonY = display_get_gui_height() - 82;
+
+    if (global.storyTimer >= room_speed * 8
+    || ui_button_clicked(_buttonX, _buttonY, _buttonW, _buttonH))
+    {
+        game_back_to_menu();
+    }
+}
+
+function game_start_phase_two_defeat()
+{
+    game_clear_spells();
+
+    with (obj_player)
+    {
+        instance_destroy();
+    }
+
+    global.player = noone;
+    global.gameState = GameState.PHASE_TWO_DEFEAT;
+    global.storyTimer = 0;
+}
+
+function game_step_phase_two_defeat()
+{
+    global.storyTimer += 1;
+
+    if (game_story_advance_pressed() || global.storyTimer >= room_speed * 5)
+    {
+        global.gameState = GameState.LOST;
+    }
+}
+
 function game_step_pre_combat()
 {
     if (!global.preCombatDialogueStarted)
@@ -256,6 +503,12 @@ function game_step_playing()
     // if the player gets removed count it as a loss
     if (!instance_exists(global.player))
     {
+        if (global.currentFight == global.config.maxFight)
+        {
+            game_start_phase_two_defeat();
+            return;
+        }
+
         global.gameState = GameState.LOST;
         return;
     }
@@ -418,13 +671,21 @@ function game_start_new_run()
 
     global.currentFight = 1;
     global.currentFloor = game_floor_from_fight(global.currentFight);
-    global.gameState = GameState.PRE_COMBAT;
+    global.gameState = GameState.FLOOR_TRANSITION;
     global.preCombatTimer = room_speed * 0.5;
     global.preCombatDialogueStarted = false;
+    global.floorTransitionPhase = 2;
+    global.floorTransitionTimer = 0;
     global.floorTransitionCoverAmount = 0;
+    global.storyStep = 0;
+    global.storyTimer = 0;
 
     game_spawn_player();
     game_spawn_enemy();
+
+    global.player.x = -96;
+    global.player.y = global.config.wizardY;
+    game_set_player_transition_anim();
 }
 
 function game_start_pre_combat_dialogue()
@@ -437,9 +698,10 @@ function game_start_pre_combat_dialogue()
     var _boxX = (room_width - _boxW) * 0.5;
     var _boxY = room_height - _boxH - 24;
 	var _text = dialogue_get_fight_intro(global.currentFight);
+    var _charDelay = dialogue_get_fight_char_delay(global.currentFight);
 
     // keep this here so object events dont need changing
-    global.activeDialogue = dialogue_create(_boxX, _boxY, game_get_dialogue_layer(), _portraitSprite, _text, 3, 1, -1, _dialogueScale, 0.25, 12, _enemyName);
+    global.activeDialogue = dialogue_create(_boxX, _boxY, game_get_dialogue_layer(), _portraitSprite, _text, _charDelay, 1, -1, _dialogueScale, 0.25, 12, _enemyName);
     global.preCombatDialogueStarted = true;
 }
 
@@ -665,6 +927,8 @@ function game_back_to_menu()
     global.currentFloor = 1;
     global.gameState = GameState.MENU;
     global.floorTransitionCoverAmount = 0;
+    global.storyStep = 0;
+    global.storyTimer = 0;
 }
 
 function game_clear_battle_instances()

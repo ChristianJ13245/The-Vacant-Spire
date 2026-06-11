@@ -946,10 +946,7 @@ function enemy_die()
         return;
     }
 
-    global.gameState = GameState.WON;
-    game_clear_spells();
-    game_clear_player_cast_state();
-    instance_destroy();
+    game_start_victory_story();
 }
 
 function enemy_is_alive()

@@ -17,6 +17,22 @@ function ui_draw()
             ui_draw_help_screen(GameState.MENU);
         break;
 
+        case GameState.INTRO:
+            ui_draw_intro();
+        break;
+
+        case GameState.NAME_ENTRY:
+            ui_draw_name_entry();
+        break;
+
+        case GameState.LETTER:
+            ui_draw_letter();
+        break;
+
+        case GameState.ARRIVAL:
+            ui_draw_arrival();
+        break;
+
         case GameState.PRE_COMBAT:
             // dialogue box draws itself before combat starts
         break;
@@ -33,6 +49,26 @@ function ui_draw()
         case GameState.PAUSE_HELP:
             ui_draw_battle_hud();
             ui_draw_help_screen(GameState.PAUSED);
+        break;
+
+        case GameState.VICTORY_STORY:
+            ui_draw_victory_story();
+        break;
+
+        case GameState.CREDITS:
+            ui_draw_credits();
+        break;
+
+        case GameState.FINAL_ENDING:
+            ui_draw_FINAL_ENDING();
+        break;
+
+        case GameState.FINAL_CREDITS:
+            ui_draw_final_credits();
+        break;
+
+        case GameState.PHASE_TWO_DEFEAT:
+            ui_draw_phase_two_defeat();
         break;
 
         case GameState.WON:
@@ -223,14 +259,350 @@ function ui_draw_volume_slider(_x, _y, _w, _label, _value)
     draw_circle(_knobX, _knobY, _knobSize * 0.5, true);
 }
 
+function ui_draw_intro()
+{
+    var _guiW = display_get_gui_width();
+    var _guiH = display_get_gui_height();
+
+    ui_draw_splash_background(0.45);
+
+    draw_set_alpha(ui_story_fade_alpha());
+    draw_set_colour(c_white);
+    draw_set_halign(fa_center);
+    draw_set_valign(fa_middle);
+    draw_text_ext(_guiW * 0.5, _guiH * 0.5, ui_intro_text(global.storyStep), 28, _guiW * 0.72);
+    draw_set_alpha(1);
+
+    draw_set_halign(fa_left);
+    draw_set_valign(fa_top);
+}
+
+function ui_intro_text(_step)
+{
+    switch (_step)
+    {
+        case 0:
+            return "The Vacant Spire Act";
+
+        case 1:
+            return "Any magical residence left unoccupied, undefended, and insufficiently warded for at least three full months can be legally claimed by whoever is brave, or stupid, enough to move in.";
+
+        case 2:
+            return "A wizard known to be a master of sorts was conducting business at the annual wizard council.";
+
+        case 3:
+            return "He has been away from his home for months now. This wizard's name was...";
+    }
+
+    return "";
+}
+
+function ui_story_fade_alpha()
+{
+    var _fadeTime = 45;
+    var _totalTime = room_speed * 7;
+    var _timer = global.storyTimer;
+
+    if (_timer < _fadeTime)
+    {
+        return _timer / _fadeTime;
+    }
+
+    if (_timer > _totalTime - _fadeTime)
+    {
+        return (_totalTime - _timer) / _fadeTime;
+    }
+
+    return 1;
+}
+
+function ui_draw_name_entry()
+{
+    var _guiW = display_get_gui_width();
+    var _guiH = display_get_gui_height();
+
+    ui_draw_splash_background(0.45);
+
+    draw_set_halign(fa_center);
+    draw_set_valign(fa_middle);
+    draw_set_colour(c_white);
+    draw_text(_guiW * 0.5, _guiH * 0.38, "Type name");
+
+    draw_set_colour(make_colour_rgb(24, 24, 32));
+    draw_rectangle(_guiW * 0.5 - 220, _guiH * 0.48 - 28, _guiW * 0.5 + 220, _guiH * 0.48 + 28, false);
+
+    draw_set_colour(c_white);
+    draw_rectangle(_guiW * 0.5 - 220, _guiH * 0.48 - 28, _guiW * 0.5 + 220, _guiH * 0.48 + 28, true);
+    draw_text(_guiW * 0.5, _guiH * 0.48, keyboard_string + "|");
+    draw_text(_guiW * 0.5, _guiH * 0.6, "Press Enter");
+
+    draw_set_halign(fa_left);
+    draw_set_valign(fa_top);
+}
+
+function ui_draw_letter()
+{
+    var _guiW = display_get_gui_width();
+    var _guiH = display_get_gui_height();
+    var _paperScale = (_guiW * 0.72) / sprite_get_width(spr_intro_letter);
+    var _paperW = sprite_get_width(spr_intro_letter) * _paperScale;
+    var _paperX = (_guiW - _paperW) * 0.5;
+    var _paperY = 42;
+    var _letterAlpha = clamp(global.storyTimer / 45, 0, 1);
+
+    ui_draw_splash_background(0.35);
+
+    draw_set_alpha(_letterAlpha);
+    ui_draw_sprite_top_left(spr_intro_letter, _paperX, _paperY, _paperScale);
+
+    draw_set_colour(c_black);
+    draw_set_halign(fa_left);
+    draw_set_valign(fa_top);
+    draw_text_ext(_paperX + 88, _paperY + 88, ui_letter_text(), 24, _paperW - 176);
+
+    var _buttonW = 220;
+    var _buttonH = 48;
+    var _buttonX = (_guiW - _buttonW) * 0.5;
+    var _buttonY = _guiH - 76;
+    ui_button(_buttonX, _buttonY, _buttonW, _buttonH, "Continue");
+    draw_set_alpha(1);
+
+    draw_set_halign(fa_left);
+}
+
+function ui_letter_text()
+{
+    return "Dear " + global.wizardName + ",\n\n"
+        + "The corridor walls seem so thin as of late. It seems an uninvited guest has moved in. I have my suspicions. I believe I heard the butler referring to him as Nick Romancer. He must be a charmer!\n\n"
+        + "He definitely has put a spell on me ;) However, his presence seems to be changing everyone. He also seems to be changing the locks and announcing that this is his tower.\n\n"
+        + "I thought I should share this with you as, well, you know me. I love a good gossip and tea session. I hope to see you soon. I'm not really feeling myself lately.\n\n"
+        + "xoxo\n\nAunt Rose";
+}
+
+function ui_draw_arrival()
+{
+    var _guiW = display_get_gui_width();
+    var _guiH = display_get_gui_height();
+
+    ui_draw_splash_background(0.45);
+
+    draw_set_alpha(ui_story_fade_alpha());
+    draw_set_colour(c_white);
+    draw_set_halign(fa_center);
+    draw_set_valign(fa_middle);
+    draw_text_ext(_guiW * 0.5, _guiH * 0.5, "With this sudden knowledge of a necromancer taking over his tower, " + global.wizardName + " swiftly gets a legally and magically binding eviction notice from the Wizarding Council and heads straight home.\n\nThe wizard finally enters the tower...", 28, _guiW * 0.72);
+    draw_set_alpha(1);
+
+    draw_set_halign(fa_left);
+    draw_set_valign(fa_top);
+}
+
+function ui_draw_victory_story()
+{
+    var _guiW = display_get_gui_width();
+    var _guiH = display_get_gui_height();
+    var _floorY = global.config.arenaBottomY - 12;
+    var _fireplaceBottomY = _floorY - 42;
+
+    draw_set_colour(c_black);
+    draw_rectangle(0, 0, _guiW, _guiH, false);
+
+    ui_draw_sprite_cover(spr_floor_background);
+
+    ui_draw_scene_sprite(spr_fairy_idle, _guiW * 0.39, _fireplaceBottomY - 92, 2.2, true);
+    ui_draw_scene_sprite(spr_trained_dummy_idle, _guiW * 0.62, _fireplaceBottomY - 76, 2.2, false);
+
+    ui_draw_sprite_bottom_centered(spr_ending_fireplace, _guiW * 0.5, _fireplaceBottomY, 1);
+
+    ui_draw_scene_sprite(spr_training_dummy_idle, _guiW * 0.16, _floorY - 22, 2.2, true);
+    ui_draw_scene_sprite(spr_goblin_idle, _guiW * 0.27, _floorY - 42, 2.2, true);
+    ui_draw_scene_sprite(spr_aunt_rose_idle, _guiW * 0.37, _floorY, 2.2, true);
+    ui_draw_scene_sprite(spr_player_idle, _guiW * 0.44, _floorY - 4, 2.2, false);
+
+    ui_draw_scene_sprite(spr_butler_mix_idle, _guiW * 0.65, _floorY - 8, 2.2, false);
+    ui_draw_scene_sprite(spr_golem_idle, _guiW * 0.86, _floorY, 2.2, false);
+
+    draw_set_alpha(0.55);
+    draw_set_colour(c_black);
+    draw_rectangle(0, 0, _guiW, 126, false);
+    draw_set_alpha(1);
+
+    draw_set_colour(c_white);
+    draw_set_halign(fa_center);
+    draw_set_valign(fa_middle);
+    draw_text_ext(_guiW * 0.5, 64, "With the tower safely secured, our master wizard and his friends celebrate the joyous occasion around a fire with laughter and glee.", 28, _guiW * 0.78);
+
+    draw_set_halign(fa_left);
+    draw_set_valign(fa_top);
+}
+
+function ui_draw_credits()
+{
+    var _guiW = display_get_gui_width();
+    var _guiH = display_get_gui_height();
+
+    draw_set_colour(c_black);
+    draw_rectangle(0, 0, _guiW, _guiH, false);
+
+    draw_set_colour(c_white);
+    draw_set_halign(fa_center);
+    draw_set_valign(fa_middle);
+    draw_text(_guiW * 0.5, _guiH * 0.36, "The Vacant Spire");
+    draw_text(_guiW * 0.5, _guiH * 0.56, "Thank you for playing");
+
+    draw_set_halign(fa_left);
+    draw_set_valign(fa_top);
+}
+
+function ui_draw_FINAL_ENDING()
+{
+    var _guiW = display_get_gui_width();
+    var _guiH = display_get_gui_height();
+
+    draw_set_colour(c_black);
+    draw_rectangle(0, 0, _guiW, _guiH, false);
+
+    var _bubbleY = _guiH * 0.28;
+    var _skullY = _guiH * 0.64;
+
+    ui_draw_sprite_centered(spr_ending_necro_skull, _guiW * 0.5, _skullY, 2);
+    ui_draw_sprite_centered(spr_ending_speech_bubble, _guiW * 0.5, _bubbleY, 1);
+
+    draw_set_colour(c_black);
+    draw_set_halign(fa_center);
+    draw_set_valign(fa_middle);
+    draw_text_ext(_guiW * 0.5, _bubbleY, "In regards to the appeal, Sir Necro Mancer, your application has been denied!", 24, _guiW * 0.46);
+
+    ui_draw_sprite_centered_rotated(spr_denied, _guiW * 0.5, global.deniedDrop, 1, 45);
+
+    if (global.deniedDrop >= _bubbleY)
+    {
+        ui_button((_guiW - 240) * 0.5, _guiH - 82, 240, 52, "Main Menu");
+    }
+
+    draw_set_halign(fa_left);
+    draw_set_valign(fa_top);
+}
+
+function ui_draw_final_credits()
+{
+    var _guiW = display_get_gui_width();
+    var _guiH = display_get_gui_height();
+
+    draw_set_colour(c_black);
+    draw_rectangle(0, 0, _guiW, _guiH, false);
+
+    draw_set_colour(c_white);
+    draw_set_halign(fa_center);
+    draw_set_valign(fa_middle);
+
+    draw_text(_guiW * 0.5, _guiH * 0.2, "Credits");
+    draw_text(_guiW * 0.5, _guiH * 0.36, "Artists");
+    draw_text(_guiW * 0.5, _guiH * 0.43, "Brandon   Carly   Jihun");
+    draw_text(_guiW * 0.5, _guiH * 0.56, "Programmers");
+    draw_text(_guiW * 0.5, _guiH * 0.63, "Riley   Christian");
+
+    ui_button((_guiW - 240) * 0.5, _guiH - 82, 240, 52, "Main Menu");
+
+    draw_set_halign(fa_left);
+    draw_set_valign(fa_top);
+}
+
+function ui_draw_phase_two_defeat()
+{
+    var _guiW = display_get_gui_width();
+    var _guiH = display_get_gui_height();
+
+    draw_set_colour(c_black);
+    draw_rectangle(0, 0, _guiW, _guiH, false);
+
+    draw_set_colour(c_white);
+    draw_set_halign(fa_center);
+    draw_set_valign(fa_middle);
+    draw_text(_guiW * 0.5, _guiH * 0.44, "\"I'm calling for a mistrial!\"");
+    draw_text(_guiW * 0.5, _guiH * 0.54, "\"You will make a nice addition to my floating skulls.\"");
+
+    draw_set_halign(fa_left);
+    draw_set_valign(fa_top);
+}
+
+function ui_draw_sprite_cover(_sprite)
+{
+    var _guiW = display_get_gui_width();
+    var _guiH = display_get_gui_height();
+    var _scale = max(_guiW / sprite_get_width(_sprite), _guiH / sprite_get_height(_sprite));
+    var _x = (_guiW - (sprite_get_width(_sprite) * _scale)) * 0.5;
+    var _y = (_guiH - (sprite_get_height(_sprite) * _scale)) * 0.5;
+
+    ui_draw_sprite_top_left(_sprite, _x, _y, _scale);
+}
+
+function ui_draw_sprite_fit(_sprite)
+{
+    var _guiW = display_get_gui_width();
+    var _guiH = display_get_gui_height();
+    var _scale = min(_guiW / sprite_get_width(_sprite), _guiH / sprite_get_height(_sprite));
+    _scale = min(_scale, 1);
+
+    ui_draw_sprite_centered(_sprite, _guiW * 0.5, _guiH * 0.5, _scale);
+}
+
+function ui_draw_splash_background(_darkAlpha)
+{
+    var _guiW = display_get_gui_width();
+    var _guiH = display_get_gui_height();
+
+    ui_draw_sprite_cover(spr_splash_background);
+
+    draw_set_alpha(_darkAlpha);
+    draw_set_colour(c_black);
+    draw_rectangle(0, 0, _guiW, _guiH, false);
+    draw_set_alpha(1);
+}
+
+function ui_draw_sprite_centered(_sprite, _x, _y, _scale)
+{
+    ui_draw_sprite_top_left(_sprite, _x - (sprite_get_width(_sprite) * _scale * 0.5), _y - (sprite_get_height(_sprite) * _scale * 0.5), _scale);
+}
+
+function ui_draw_sprite_bottom_centered(_sprite, _x, _bottomY, _scale)
+{
+    ui_draw_sprite_top_left(_sprite, _x - (sprite_get_width(_sprite) * _scale * 0.5), _bottomY - (sprite_get_height(_sprite) * _scale), _scale);
+}
+
+function ui_draw_scene_sprite(_sprite, _x, _y, _scale, _faceRight)
+{
+    var _xScale = _scale;
+
+    if (_faceRight)
+    {
+        _xScale = -_scale;
+    }
+
+    draw_sprite_ext(_sprite, 0, _x, _y, _xScale, _scale, 0, c_white, 1);
+}
+
+function ui_draw_sprite_centered_rotated(_sprite, _x, _y, _scale, _angle)
+{
+    var _dx = ((sprite_get_width(_sprite) * 0.5) - sprite_get_xoffset(_sprite)) * _scale;
+    var _dy = ((sprite_get_height(_sprite) * 0.5) - sprite_get_yoffset(_sprite)) * _scale;
+    var _rotX = (_dx * dcos(_angle)) - (_dy * dsin(_angle));
+    var _rotY = (_dx * dsin(_angle)) + (_dy * dcos(_angle));
+
+    draw_sprite_ext(_sprite, 0, _x - _rotX, _y - _rotY, _scale, _scale, _angle, c_white, 1);
+}
+
+function ui_draw_sprite_top_left(_sprite, _x, _y, _scale)
+{
+    draw_sprite_ext(_sprite, 0, _x + (sprite_get_xoffset(_sprite) * _scale), _y + (sprite_get_yoffset(_sprite) * _scale), _scale, _scale, 0, c_white, 1);
+}
+
 function ui_draw_main_menu()
 {
     var _guiW = display_get_gui_width();
     var _guiH = display_get_gui_height();
 
-    // black background for the menu
-    draw_set_colour(c_black);
-    draw_rectangle(0, 0, _guiW, _guiH, false);
+    ui_draw_splash_background(0.35);
 
     draw_set_halign(fa_center);
     draw_set_colour(c_white);

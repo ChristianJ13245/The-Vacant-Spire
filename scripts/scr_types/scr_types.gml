@@ -5,11 +5,20 @@ enum GameState
 {
     MENU,
     HELP,
+    INTRO,
+    NAME_ENTRY,
+    LETTER,
+    ARRIVAL,
     PRE_COMBAT,
     PLAYING,
     FLOOR_TRANSITION,
     PAUSED,
     PAUSE_HELP,
+    VICTORY_STORY,
+    CREDITS,
+    FINAL_ENDING,
+    FINAL_CREDITS,
+    PHASE_TWO_DEFEAT,
     WON,
     LOST
 }

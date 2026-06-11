@@ -527,6 +527,13 @@ function player_cast_spell(_spellInfo)
 function player_die()
 {
     isDead = true;
+
+    if (global.currentFight == global.config.maxFight)
+    {
+        game_start_phase_two_defeat();
+        return;
+    }
+
     global.gameState = GameState.LOST;
     instance_destroy();
 }

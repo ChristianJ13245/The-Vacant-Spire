@@ -4,16 +4,25 @@
 
 function audio_manager_create()
 {
+    if (variable_global_exists("audio"))
+    {
+        audio_pick_target_music();
+
+        if (global.audio.targetMusic != global.audio.currentMusic)
+        {
+            audio_switch_music(global.audio.targetMusic);
+        }
+        else if (global.audio.currentMusicId == -1 || !audio_is_playing(global.audio.currentMusicId))
+        {
+            audio_start_music(global.audio.targetMusic);
+        }
+
+        return;
+    }
+
     var _mainVolume = 1;
     var _musicVolume = 1;
     var _sfxControlVolume = 1;
-
-    if (variable_global_exists("audio"))
-    {
-        if (variable_struct_exists(global.audio, "mainVolume")) _mainVolume = global.audio.mainVolume;
-        if (variable_struct_exists(global.audio, "musicVolume")) _musicVolume = global.audio.musicVolume;
-        if (variable_struct_exists(global.audio, "sfxControlVolume")) _sfxControlVolume = global.audio.sfxControlVolume;
-    }
 
     // keep everything in a global struct
     // makes it easy to call sounds from other scripts
@@ -21,6 +30,7 @@ function audio_manager_create()
         // music assets
         menuMusic: snd_menu_music,
         battleMusic: snd_battle_music,
+        endingMusic: snd_ending_music,
 
         // sound effect assets
         fireCast: snd_fire_cast,
@@ -38,6 +48,7 @@ function audio_manager_create()
         // volumes
         menuVolume: 0.3,
         battleVolume: 0.4,
+        endingVolume: 0.4,
         sfxVolume: 0.8,
         spellVolume: 0.45,
         uiVolume: 0.6,
@@ -84,8 +95,23 @@ function audio_pick_target_music()
         return;
     }
 
+    if (global.gameState == GameState.VICTORY_STORY
+    || global.gameState == GameState.CREDITS
+    || global.gameState == GameState.FINAL_ENDING
+    || global.gameState == GameState.FINAL_CREDITS)
+    {
+        global.audio.targetMusic = global.audio.endingMusic;
+        global.audio.targetVolume = audio_get_music_volume(global.audio.endingVolume);
+        return;
+    }
+
     if (global.gameState == GameState.MENU
-    || global.gameState == GameState.HELP)
+    || global.gameState == GameState.HELP
+    || global.gameState == GameState.INTRO
+    || global.gameState == GameState.NAME_ENTRY
+    || global.gameState == GameState.LETTER
+    || global.gameState == GameState.ARRIVAL
+    || global.gameState == GameState.PHASE_TWO_DEFEAT)
     {
         global.audio.targetMusic = global.audio.menuMusic;
         global.audio.targetVolume = audio_get_music_volume(global.audio.menuVolume);
@@ -155,6 +181,11 @@ function audio_stop_music_assets()
     if (global.audio.battleMusic != -1)
     {
         audio_stop_sound(global.audio.battleMusic);
+    }
+
+    if (global.audio.endingMusic != -1)
+    {
+        audio_stop_sound(global.audio.endingMusic);
     }
 }
 

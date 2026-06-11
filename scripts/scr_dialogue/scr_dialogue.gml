@@ -56,13 +56,23 @@ function dialogue_get_fight_intro(_fight)
 			return "Steve has been training.";
 
 		case 9:
-			return "empty for now until script is done";
+			return "Hello there. Sigh. Become a necromancer, they said. Minions will do it all for you, they said. Ah yes, such as the mighty Aunt Rose. Well, what business do you have in MY wizard tower? I happen to have a legally and magically binding eviction notice, issued by the Grand Wizarding Council. How magically binding is an eviction notice held by a dead man?";
 
 		case 10:
-			return "empty for now until script is done";
+			return "Call an ambulance! ...? But not for me. BEHOLD MY TRUE FORM!";
 	}
 
 	return "Click to skip text, then click again to start.";
+}
+
+function dialogue_get_fight_char_delay(_fight)
+{
+    if (_fight == 9)
+    {
+        return 2;
+    }
+
+    return 3;
 }
 
 function dialogue_setup_defaults()
