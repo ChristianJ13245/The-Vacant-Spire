@@ -15,7 +15,7 @@ function audio_manager_create()
         //spellCast: snd_spell_cast,
         //spellHit: snd_spell_hit,
         //spellCollision: snd_spell_collision,
-        //hurt: snd_hurt,
+        hurt: snd_hurt,
         //buttonClick: snd_button_click,
         //buttonHover: snd_button_hover,
         jump: snd_jump,

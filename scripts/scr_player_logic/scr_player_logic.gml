@@ -141,7 +141,8 @@ function player_update_jump()
         isJumping = true;
         jumpVelocity = jumpStrength;
         jumpCount += 1;
-		audio_play_sfx(global.audio.jump, 1, 1);
+		
+		audio_play_jump();
     }
 
     if (isJumping)
@@ -548,6 +549,8 @@ function player_take_damage(_amount)
     {
         currentHealth = 0;
     }
+	
+	audio_play_hurt();
 
     global.debugText = "Player took " + string(_amount) + " damage";
 }
