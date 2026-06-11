@@ -1,7 +1,7 @@
 {
   "resourceType": "GMSound",
   "resourceVersion": "1.0",
-  "name": "snd_dialogueChirp",
+  "name": "snd_jump",
   "conversionMode": 0,
   "compression": 0,
   "volume": 1.0,
@@ -14,8 +14,8 @@
     "name": "audiogroup_default",
     "path": "audiogroups/audiogroup_default",
   },
-  "soundFile": "snd_dialogueChirp.wav",
-  "duration": 0.07,
+  "soundFile": "snd_jump.wav",
+  "duration": 0.214438,
   "parent": {
     "name": "Sounds",
     "path": "folders/Sounds.yy",
