@@ -5,6 +5,7 @@ function ui_draw()
     // reset text alignment at the start of GUI drawing to avoid any issues
     draw_set_halign(fa_left);
     draw_set_valign(fa_top);
+    ui_begin_hover_check();
 
     switch (global.gameState)
     {
@@ -44,6 +45,22 @@ function ui_draw()
     }
 
     ui_draw_floor_transition_overlay();
+    ui_end_hover_check();
+}
+
+function ui_begin_hover_check()
+{
+    if (!variable_global_exists("uiHoveredButton"))
+    {
+        global.uiHoveredButton = "";
+    }
+
+    global.uiHoveredButtonNext = "";
+}
+
+function ui_end_hover_check()
+{
+    global.uiHoveredButton = global.uiHoveredButtonNext;
 }
 
 function ui_draw_floor_transition_overlay()
@@ -77,12 +94,20 @@ function ui_mouse_in_rect(_x, _y, _w, _h)
 
 function ui_button_clicked(_x, _y, _w, _h)
 {
-    return ui_mouse_in_rect(_x, _y, _w, _h) && mouse_check_button_pressed(mb_left);
+    var _clicked = ui_mouse_in_rect(_x, _y, _w, _h) && mouse_check_button_pressed(mb_left);
+
+    if (_clicked)
+    {
+        audio_play_button_click();
+    }
+
+    return _clicked;
 }
 
 function ui_button(_x, _y, _w, _h, _label)
 {
     var _hover = ui_mouse_in_rect(_x, _y, _w, _h);
+    ui_button_hover_sound(_x, _y, _w, _h, _label, _hover);
 
     if (_hover)
     {
@@ -113,6 +138,89 @@ function ui_button(_x, _y, _w, _h, _label)
     draw_set_valign(fa_top);
 
     return _hover && mouse_check_button_pressed(mb_left);
+}
+
+function ui_button_hover_sound(_x, _y, _w, _h, _label, _hover)
+{
+    if (!_hover)
+    {
+        return;
+    }
+
+    var _buttonId = _label + ":" + string(_x) + ":" + string(_y) + ":" + string(_w) + ":" + string(_h);
+    global.uiHoveredButtonNext = _buttonId;
+
+    if (global.uiHoveredButton != _buttonId)
+    {
+        audio_play_button_hover();
+    }
+}
+
+function ui_volume_slider_input(_x, _y, _w, _h, _id, _value)
+{
+    if (!variable_global_exists("volumeSliderDrag"))
+    {
+        global.volumeSliderDrag = "";
+    }
+
+    if (!mouse_check_button(mb_left))
+    {
+        if (global.volumeSliderDrag == _id)
+        {
+            global.volumeSliderDrag = "";
+        }
+
+        return _value;
+    }
+
+    var _hover = ui_mouse_in_rect(_x, _y, _w, _h);
+
+    if (mouse_check_button_pressed(mb_left) && _hover)
+    {
+        global.volumeSliderDrag = _id;
+        audio_play_button_click();
+    }
+
+    if (global.volumeSliderDrag != _id)
+    {
+        return _value;
+    }
+
+    var _mx = device_mouse_x_to_gui(0);
+    return clamp((_mx - _x) / _w, 0, 1);
+}
+
+function ui_draw_volume_slider(_x, _y, _w, _label, _value)
+{
+    var _trackH = 8;
+    var _trackY = _y + 12;
+    var _knobSize = 18;
+    var _knobX = _x + (_w * _value);
+    var _knobY = _trackY + (_trackH * 0.5);
+
+    draw_set_halign(fa_left);
+    draw_set_valign(fa_top);
+    draw_set_colour(c_white);
+    draw_text(_x, _y - 22, _label);
+
+    draw_set_halign(fa_right);
+    draw_text(_x + _w, _y - 22, string(round(_value * 100)) + "%");
+
+    draw_set_halign(fa_left);
+    draw_set_colour(make_colour_rgb(42, 42, 52));
+    draw_rectangle(_x, _trackY, _x + _w, _trackY + _trackH, false);
+
+    draw_set_colour(c_yellow);
+    draw_rectangle(_x, _trackY, _knobX, _trackY + _trackH, false);
+
+    draw_set_colour(c_white);
+    draw_rectangle(_x, _trackY, _x + _w, _trackY + _trackH, true);
+
+    draw_set_colour(make_colour_rgb(245, 245, 245));
+    draw_circle(_knobX, _knobY, _knobSize * 0.5, false);
+
+    draw_set_colour(c_black);
+    draw_circle(_knobX, _knobY, _knobSize * 0.5, true);
 }
 
 function ui_draw_main_menu()
@@ -178,6 +286,19 @@ function ui_draw_help_screen(_backState)
     draw_text(_guiW * 0.5, 350, "Fire beats Air   |   Air beats Water   |   Water beats Fire");
     draw_text(_guiW * 0.5, 390, "Beat the enemy to climb the spire.");
     draw_text(_guiW * 0.5, 420, "Esc pauses during battle.");
+
+    if (variable_global_exists("audio"))
+    {
+        var _sliderW = 420;
+        var _sliderX = (_guiW - _sliderW) * 0.5;
+        var _sliderY = 500;
+        var _gap = 48;
+
+        draw_text(_guiW * 0.5, 465, "Volume");
+        ui_draw_volume_slider(_sliderX, _sliderY, _sliderW, "Main", global.audio.mainVolume);
+        ui_draw_volume_slider(_sliderX, _sliderY + _gap, _sliderW, "SFX", global.audio.sfxControlVolume);
+        ui_draw_volume_slider(_sliderX, _sliderY + (_gap * 2), _sliderW, "Music", global.audio.musicVolume);
+    }
 
     draw_set_halign(fa_left);
 }

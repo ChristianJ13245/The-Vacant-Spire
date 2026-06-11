@@ -24,6 +24,7 @@ function enemy_create()
 	dodgeChance = enemyConfig.dodgeChance;
 	spellQuickChance = enemyConfig.spellQuickChance;
 	spellMediumChance = enemyConfig.spellMediumChance;
+    hurtPitch = enemyConfig.hurtPitch;
     megaFireballChance = 0;
     megaFireballCooldownTime = 0;
     megaFireballCooldownTimer = 0;
@@ -206,6 +207,7 @@ function enemy_get_config(_enemyType)
                 dodgeChance: 0,
                 spellQuickChance: 100,
                 spellMediumChance: 0,
+                hurtPitch: 0.9,
                 idleSpriteName: "spr_training_dummy_idle",
                 attackSpriteName: "spr_training_dummy_attack",
                 faceSpriteName: "spr_training_dummy_face",
@@ -233,6 +235,7 @@ function enemy_get_config(_enemyType)
                 dodgeChance: 0,
                 spellQuickChance: 80,
                 spellMediumChance: 20,
+                hurtPitch: 1.2,
                 idleSpriteName: "spr_goblin_idle",
                 attackSpriteName: "spr_goblin_attack",
                 faceSpriteName: "spr_goblin_face",
@@ -260,6 +263,7 @@ function enemy_get_config(_enemyType)
                 dodgeChance: 0,
                 spellQuickChance: 60,
                 spellMediumChance: 40,
+                hurtPitch: 1.0,
                 idleSpriteName: "spr_aunt_rose_idle",
                 attackSpriteName: "spr_aunt_rose_attack",
                 faceSpriteName: "spr_aunt_rose_face",
@@ -287,6 +291,7 @@ function enemy_get_config(_enemyType)
                 dodgeChance: 12,
                 spellQuickChance: 70,
                 spellMediumChance: 30,
+                hurtPitch: 1.45,
                 idleSpriteName: "spr_fairy_idle",
                 attackSpriteName: "spr_fairy_attack",
                 faceSpriteName: "spr_fairy_face",
@@ -314,6 +319,7 @@ function enemy_get_config(_enemyType)
                 dodgeChance: 0,
                 spellQuickChance: 50,
                 spellMediumChance: 45,
+                hurtPitch: 0.95,
                 idleSpriteName: "spr_butler_white_idle",
                 attackSpriteName: "spr_butler_white_attack",
                 faceSpriteName: "spr_butler_face",
@@ -341,6 +347,7 @@ function enemy_get_config(_enemyType)
                 dodgeChance: 0,
                 spellQuickChance: 45,
                 spellMediumChance: 45,
+                hurtPitch: 0.85,
                 idleSpriteName: "spr_butler_black_idle",
                 attackSpriteName: "spr_butler_black_attack",
                 faceSpriteName: "spr_butler_face",
@@ -368,6 +375,7 @@ function enemy_get_config(_enemyType)
                 dodgeChance: 0,
                 spellQuickChance: 30,
                 spellMediumChance: 50,
+                hurtPitch: 0.65,
                 idleSpriteName: "spr_golem_idle",
                 attackSpriteName: "spr_golem_attack",
                 faceSpriteName: "spr_golem_face",
@@ -395,6 +403,7 @@ function enemy_get_config(_enemyType)
                 dodgeChance: 0,
                 spellQuickChance: 40,
                 spellMediumChance: 45,
+                hurtPitch: 0.85,
                 idleSpriteName: "spr_trained_dummy_idle",
                 attackSpriteName: "spr_trained_dummy_attack",
                 faceSpriteName: "spr_trained_dummy_face",
@@ -422,6 +431,7 @@ function enemy_get_config(_enemyType)
                 dodgeChance: 0,
                 spellQuickChance: 40,
                 spellMediumChance: 45,
+                hurtPitch: 0.8,
                 idleSpriteName: "spr_necromancer_1_idle",
                 attackSpriteName: "spr_necromancer_1_attack",
                 faceSpriteName: "spr_necromancer_1_face",
@@ -449,6 +459,7 @@ function enemy_get_config(_enemyType)
                 dodgeChance: 0,
                 spellQuickChance: 35,
                 spellMediumChance: 45,
+                hurtPitch: 0.75,
                 idleSpriteName: "spr_necromancer_2_idle",
                 attackSpriteName: "spr_necromancer_2_attack",
                 faceSpriteName: "spr_necromancer_2_face",
@@ -885,6 +896,8 @@ function enemy_cast_spell(_spellInfo)
 	{
 		_spell.damage *= damageScale;
 	}
+
+    audio_play_spell_cast(_spellInfo.spellElement);
 }
 
 function enemy_cast_mega_fireball()
@@ -901,6 +914,7 @@ function enemy_cast_mega_fireball()
     enemy_set_cast_animation();
 
     var _spell = spell_spawn(id, _spellInfo, _spawnX, _spawnY, facing);
+    audio_play_spell_cast(_spellInfo.spellElement);
 
     if (instance_exists(_spell))
     {
@@ -967,6 +981,8 @@ function enemy_take_damage(_amount)
     {
         currentHealth = 0;
     }
+
+    audio_play_hurt(hurtPitch);
 }
 
 function enemy_should_dodge()

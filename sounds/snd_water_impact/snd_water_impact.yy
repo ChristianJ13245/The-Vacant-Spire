@@ -1,7 +1,7 @@
 {
   "resourceType": "GMSound",
   "resourceVersion": "1.0",
-  "name": "snd_hurt",
+  "name": "snd_water_impact",
   "conversionMode": 0,
   "compression": 0,
   "volume": 1.0,
@@ -14,8 +14,8 @@
     "name": "audiogroup_default",
     "path": "audiogroups/audiogroup_default",
   },
-  "soundFile": "snd_hurt.mp3",
-  "duration": 0.470187,
+  "soundFile": "snd_water_impact.wav",
+  "duration": 0.275167,
   "parent": {
     "name": "Sounds",
     "path": "folders/Sounds.yy",

@@ -334,6 +334,8 @@ function spell_check_wizard_hit()
 
     if (spell_rect_circle_overlap(_left, _top, _right, _bottom, x, y, _hitRadius))
     {
+        audio_play_spell_impact(spellElement);
+
         if (_target == global.player)
         {
             with (_target)
@@ -373,6 +375,8 @@ function spell_check_spell_collision()
 
                         if (_dist <= _selfRadius + _otherRadius)
                         {
+                            audio_play_spell_collision();
+
                             var _result = spell_resolve_collision(_self, id);
 
                             if (_result == 0)

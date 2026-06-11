@@ -361,7 +361,7 @@ function dialogue_tick_typewriter(_textLength)
 	// other than where there are spaces, play a sound for each character
 	if (_typedChar != " ")
 	{
-		audio_play_sound(snd_dialogueChirp, 0, 0, soundVolume, 0, random_range(soundPitch - 0.2, soundPitch + 0.2));
+		audio_play_sound(snd_dialogueChirp, 0, 0, audio_get_sfx_volume(soundVolume), 0, random_range(soundPitch - 0.2, soundPitch + 0.2));
 	}
 
 	// tiny pause after sentence endings so it reads less flat

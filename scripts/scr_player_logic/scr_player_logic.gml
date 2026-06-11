@@ -141,7 +141,7 @@ function player_update_jump()
         isJumping = true;
         jumpVelocity = jumpStrength;
         jumpCount += 1;
-		audio_play_sfx(global.audio.jump, 1, 1);
+		audio_play_jump();
     }
 
     if (isJumping)
@@ -519,6 +519,7 @@ function player_cast_spell(_spellInfo)
     player_set_cast_animation(_pose);
 
     spell_spawn(id, _spellInfo, _spawnX, _spawnY, facing);
+    audio_play_spell_cast(_spellInfo.spellElement);
 
     return true;
 }
@@ -545,6 +546,5 @@ function player_take_damage(_amount)
         currentHealth = 0;
     }
 
-
-	audio_play_hurt();
+	audio_play_hurt(1);
 }

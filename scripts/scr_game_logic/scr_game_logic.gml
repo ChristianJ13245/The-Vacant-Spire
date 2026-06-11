@@ -17,6 +17,7 @@ function game_create()
     global.floorTransitionPhase = 0;
     global.floorTransitionTimer = 0;
     global.floorTransitionCoverAmount = 0;
+    global.volumeSliderDrag = "";
 
     // shows the current spell setup on the HUD
     global.inputText = "";
@@ -151,6 +152,42 @@ function game_step_help(_backState)
     {
         global.gameState = _backState;
         return;
+    }
+
+    game_step_help_volume_sliders();
+}
+
+function game_step_help_volume_sliders()
+{
+    if (!variable_global_exists("audio"))
+    {
+        return;
+    }
+
+    var _guiW = display_get_gui_width();
+    var _sliderW = 420;
+    var _sliderX = (_guiW - _sliderW) * 0.5;
+    var _sliderH = 22;
+    var _sliderY = 500;
+    var _gap = 48;
+
+    var _mainVolume = ui_volume_slider_input(_sliderX, _sliderY, _sliderW, _sliderH, "main", global.audio.mainVolume);
+    var _sfxVolume = ui_volume_slider_input(_sliderX, _sliderY + _gap, _sliderW, _sliderH, "sfx", global.audio.sfxControlVolume);
+    var _musicVolume = ui_volume_slider_input(_sliderX, _sliderY + (_gap * 2), _sliderW, _sliderH, "music", global.audio.musicVolume);
+
+    if (_mainVolume != global.audio.mainVolume)
+    {
+        audio_set_main_volume(_mainVolume);
+    }
+
+    if (_sfxVolume != global.audio.sfxControlVolume)
+    {
+        audio_set_sfx_volume(_sfxVolume);
+    }
+
+    if (_musicVolume != global.audio.musicVolume)
+    {
+        audio_set_music_volume(_musicVolume);
     }
 }
 
