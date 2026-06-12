@@ -9,6 +9,8 @@ function enemy_create()
     currentHealth = maxHealth;
     isDead = false;
     displayName = enemyConfig.displayName;
+    hitFlashTimer = 0;
+    hitFlashTime = 6;
     facing = -1;
     bodyColour = enemyConfig.bodyColour;
 
@@ -108,6 +110,8 @@ function enemy_step()
 	{
 		currentHealth = 0;
 	}
+
+    enemy_update_hit_flash();
 
     if (enemy_update_phase_intro())
     {
@@ -538,10 +542,26 @@ function enemy_draw()
     if (is_real(drawSprite) && drawSprite != -1)
     {
         draw_sprite_ext(drawSprite, drawFrame, x, y, 3 * _scale, 3 * _scale, 0, c_white, 1);
+        enemy_draw_hit_flash(_scale);
     }
 
     // uncomment while tuning hitboxes
     // enemy_draw_debug_hitbox();
+}
+
+function enemy_draw_hit_flash(_scaleAmount)
+{
+    if (hitFlashTimer <= 0)
+    {
+        return;
+    }
+
+    var _flashAlpha = hitFlashTimer / hitFlashTime;
+    var _scale = 3 * _scaleAmount;
+
+    gpu_set_blendmode(bm_add);
+    draw_sprite_ext(drawSprite, drawFrame, x, y, _scale, _scale, 0, c_white, _flashAlpha);
+    gpu_set_blendmode(bm_normal);
 }
 
 function enemy_get_depth_scale()
@@ -781,6 +801,14 @@ function enemy_choose_random_spell()
     return new SpellData(_spellPower, _spellElement);
 }
 
+function enemy_update_hit_flash()
+{
+    if (hitFlashTimer > 0)
+    {
+        hitFlashTimer -= 1;
+    }
+}
+
 function enemy_choose_spell_power()
 {
     var _roll = irandom(99);
@@ -973,6 +1001,7 @@ function enemy_take_damage(_amount)
     }
 
     currentHealth -= _amount;
+    hitFlashTimer = hitFlashTime;
 
     if (currentHealth < 0)
     {

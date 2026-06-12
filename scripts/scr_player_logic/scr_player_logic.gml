@@ -7,6 +7,8 @@ function player_create()
     currentHealth = maxHealth;
     isDead = false;
     displayName = "Player";
+    hitFlashTimer = 0;
+    hitFlashTime = 6;
 
     // facing 1 means cast from left to right
     facing = 1;
@@ -111,6 +113,7 @@ function player_step()
 
     // bring mana back over time
     player_update_mana();
+    player_update_hit_flash();
 
     if (currentHealth <= 0 && !isDead)
     {
@@ -180,6 +183,7 @@ function player_draw()
 
 		// normal player sprite
 		draw_sprite_ext(_spr, drawFrame, x, _drawY, 3 * _scale, 3 * _scale, 0, c_white, 1);
+        player_draw_hit_flash(_spr, _drawY, _scale);
 
 		// little spell charge visual at the player's hand
 		player_draw_charge_preview(_drawY, _scale);
@@ -193,6 +197,21 @@ function player_draw()
 
     // uncomment while tuning hitboxes
     // player_draw_debug_hitbox();
+}
+
+function player_draw_hit_flash(_spr, _drawY, _scaleAmount)
+{
+    if (hitFlashTimer <= 0)
+    {
+        return;
+    }
+
+    var _flashAlpha = hitFlashTimer / hitFlashTime;
+    var _scale = 3 * _scaleAmount;
+
+    gpu_set_blendmode(bm_add);
+    draw_sprite_ext(_spr, drawFrame, x, _drawY, _scale, _scale, 0, c_white, _flashAlpha);
+    gpu_set_blendmode(bm_normal);
 }
 
 function player_draw_charge_preview(_drawY, _depthScale)
@@ -524,6 +543,14 @@ function player_cast_spell(_spellInfo)
     return true;
 }
 
+function player_update_hit_flash()
+{
+    if (hitFlashTimer > 0)
+    {
+        hitFlashTimer -= 1;
+    }
+}
+
 function player_die()
 {
     isDead = true;
@@ -546,6 +573,7 @@ function player_is_alive()
 function player_take_damage(_amount)
 {
     currentHealth -= _amount;
+    hitFlashTimer = hitFlashTime;
 
     // stop health going under 0
     if (currentHealth < 0)

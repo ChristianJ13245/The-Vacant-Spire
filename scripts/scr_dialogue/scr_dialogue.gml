@@ -1,10 +1,11 @@
 // Create a dialogue box with given parameters
 function dialogue_create(_x = 32, _y = 128, _layer = "Instances", _portraitSprite = spr_portraitDefault,
-						 _dialogueString = "", _charDelay = 4, _soundPitch = 1, _autoCloseDelay = -1, _dialogueScale = 4, _soundVolume = 0.25, _sentencePauseDelay = 12, _speakerName = "")
+						 _dialogueString = "", _charDelay = 4, _soundPitch = 1, _autoCloseDelay = -1, _dialogueScale = 4, _soundVolume = 0.25, _sentencePauseDelay = 12, _speakerName = "", _portraitSide = 1)
 {
 	var dialogueBox = instance_create_layer(_x, _y, _layer, obj_dialogueBox,
 	{
 		portraitSprite : _portraitSprite,
+		portraitSide : _portraitSide,
 		speakerName : _speakerName,
 		dialogueText : _dialogueString,
 		displayedText : "",
@@ -47,7 +48,7 @@ function dialogue_get_fight_intro(_fight)
 			return "Welcome, honored guest! Or should we say unwelcome?";
 
 		case 6:
-			return "Welcome, honored guest! Or should we say unwelcome?";
+			return "You didnt think id let you get off that easy, did you?";
 
 		case 7:
 			return "Speed is strength.";
@@ -56,13 +57,28 @@ function dialogue_get_fight_intro(_fight)
 			return "Steve has been training.";
 
 		case 9:
-			return "Hello there. Sigh. Become a necromancer, they said. Minions will do it all for you, they said. Ah yes, such as the mighty Aunt Rose. Well, what business do you have in MY wizard tower? I happen to have a legally and magically binding eviction notice, issued by the Grand Wizarding Council. How magically binding is an eviction notice held by a dead man?";
+			return dialogue_get_necro_intro_one();
 
 		case 10:
 			return "Call an ambulance! ...? But not for me. BEHOLD MY TRUE FORM!";
 	}
 
 	return "Click to skip text, then click again to start.";
+}
+
+function dialogue_get_necro_intro_one()
+{
+    return "Hello there. Sigh. Become a necromancer, they said. Minions will do it all for you, they said.";
+}
+
+function dialogue_get_necro_player_reply()
+{
+    return "Ah yes, such as the mighty Aunt Rose. Well, what business do you have in MY wizard tower? I happen to have a legally and magically binding eviction notice, issued by the Grand Wizarding Council.";
+}
+
+function dialogue_get_necro_intro_two()
+{
+    return "How magically binding is an eviction notice held by a dead man?";
 }
 
 function dialogue_get_fight_char_delay(_fight)
@@ -88,6 +104,8 @@ function dialogue_setup_defaults()
 	if (!variable_instance_exists(id, "pagesReady")) pagesReady = false;
 	if (!variable_instance_exists(id, "currentPage")) currentPage = 0;
 	if (!variable_instance_exists(id, "pageText")) pageText = "";
+	if (!variable_instance_exists(id, "portraitSide")) portraitSide = 1;
+	if (!variable_instance_exists(id, "skipButtonPressed")) skipButtonPressed = false;
 }
 
 function dialogue_has_portrait()
@@ -124,10 +142,31 @@ function dialogue_get_portrait_layout()
 
 	_layout.hasPortrait = true;
 	_layout.scale = (_boxH - (_pad * 2)) / sprite_get_height(portraitSprite);
-	_layout.x = x + _boxW - _pad - (sprite_get_width(portraitSprite) * _layout.scale);
+
+	if (portraitSide == 0)
+	{
+		_layout.x = x + _pad;
+	}
+	else
+	{
+		_layout.x = x + _boxW - _pad - (sprite_get_width(portraitSprite) * _layout.scale);
+	}
+
 	_layout.y = y + _pad;
 
 	return _layout;
+}
+
+function dialogue_get_text_x()
+{
+	var _portrait = dialogue_get_portrait_layout();
+
+	if (_portrait.hasPortrait && portraitSide == 0)
+	{
+		return _portrait.x + (sprite_get_width(portraitSprite) * _portrait.scale) + (4 * dialogueScale);
+	}
+
+	return x + (8 * dialogueScale);
 }
 
 // Draw the dialogue box (called in the draw event of dialogue box objects)
@@ -145,12 +184,12 @@ function dialogue_draw()
 	
 	draw_sprite_ext(spr_dialogueBoxFrame, 0, x, y, dialogueScale, dialogueScale, 0, c_white, 1);				// dialogue box frame
 
-	var _textX = x + (8 * dialogueScale);
+	var _textX = dialogue_get_text_x();
 	var _nameY = y + (2 * dialogueScale);
 	var _textY = y + (10 * dialogueScale);
 	var _textWidth = dialogue_get_text_width();
 
-	// Draw portrait inside the right side of the box
+	// Draw portrait inside the box
 	if (_portrait.hasPortrait)
 	{
 		var _portraitFrame = 0;
@@ -176,6 +215,52 @@ function dialogue_draw()
 
 	draw_text_ext_transformed(_textX, _textY, displayedText, -1, _textWidth, dialogueScale, dialogueScale, 0);
 	draw_set_font(-1);
+
+	dialogue_draw_skip_button(_boxW);
+}
+
+function dialogue_draw_skip_button(_boxW)
+{
+	var _buttonW = 92;
+	var _buttonH = 28;
+	var _buttonX = x + _boxW - _buttonW - 18;
+	var _buttonY = y - _buttonH - 8;
+	var _hover = mouse_x >= _buttonX && mouse_x <= _buttonX + _buttonW && mouse_y >= _buttonY && mouse_y <= _buttonY + _buttonH;
+	var _scale = 1;
+
+	if (_hover)
+	{
+		_scale = 1.06;
+	}
+
+	var _drawW = _buttonW * _scale;
+	var _drawH = _buttonH * _scale;
+	var _left = _buttonX + (_buttonW * 0.5) - (_drawW * 0.5);
+	var _top = _buttonY + (_buttonH * 0.5) - (_drawH * 0.5);
+	var _xScale = _drawW / sprite_get_width(spr_button_scroll);
+	var _yScale = _drawH / sprite_get_height(spr_button_scroll);
+	var _spriteX = _left + (sprite_get_xoffset(spr_button_scroll) * _xScale);
+	var _spriteY = _top + (sprite_get_yoffset(spr_button_scroll) * _yScale);
+
+	draw_sprite_ext(spr_button_scroll, 0, _spriteX, _spriteY, _xScale, _yScale, 0, c_white, 1);
+
+	if (_hover)
+	{
+		draw_set_colour(c_white);
+	}
+	else
+	{
+		draw_set_colour(c_black);
+	}
+
+	draw_set_halign(fa_center);
+	draw_set_valign(fa_middle);
+	draw_set_font(fnt_dialogueBoxText);
+	draw_text_transformed(_buttonX + (_buttonW * 0.5), _buttonY + (_buttonH * 0.5), "Skip", _scale, _scale, 0);
+	draw_set_font(-1);
+	draw_set_halign(fa_left);
+	draw_set_valign(fa_top);
+	draw_set_colour(c_white);
 }
 
 function dialogue_prepare_pages()
@@ -203,10 +288,10 @@ function dialogue_get_text_width()
 {
 	var _boxW = dialogue_get_box_w();
 	var _portrait = dialogue_get_portrait_layout();
-	var _textX = x + (8 * dialogueScale);
+	var _textX = dialogue_get_text_x();
 	var _textRight = x + _boxW - (8 * dialogueScale);
 
-	if (_portrait.hasPortrait)
+	if (_portrait.hasPortrait && portraitSide != 0)
 	{
 		_textRight = _portrait.x - (4 * dialogueScale);
 	}
@@ -312,9 +397,49 @@ function dialogue_advance_pressed()
 		return false;
 	}
 
-	return mouse_check_button_pressed(mb_left)
-		|| keyboard_check_pressed(vk_enter)
-		|| keyboard_check_pressed(vk_space);
+	if (dialogue_skip_button_pressed())
+	{
+		return true;
+	}
+
+	return keyboard_check_pressed(vk_space);
+}
+
+function dialogue_skip_button_pressed()
+{
+	var _hover = dialogue_mouse_over_skip_button();
+
+	if (mouse_check_button_pressed(mb_left) && _hover)
+	{
+		skipButtonPressed = true;
+		return false;
+	}
+
+	if (!mouse_check_button_released(mb_left) || !skipButtonPressed)
+	{
+		return false;
+	}
+
+	skipButtonPressed = false;
+
+	if (!_hover)
+	{
+		return false;
+	}
+
+	audio_play_button_click();
+	return true;
+}
+
+function dialogue_mouse_over_skip_button()
+{
+	var _boxW = dialogue_get_box_w();
+	var _buttonW = 92;
+	var _buttonH = 28;
+	var _buttonX = x + _boxW - _buttonW - 18;
+	var _buttonY = y - _buttonH - 8;
+
+	return mouse_x >= _buttonX && mouse_x <= _buttonX + _buttonW && mouse_y >= _buttonY && mouse_y <= _buttonY + _buttonH;
 }
 
 function dialogue_next_page()

@@ -44,6 +44,7 @@ function audio_manager_create()
         buttonClick: snd_button_click,
         buttonHover: snd_button_hover,
         jump: snd_jump,
+        letterKiss: snd_letter_kiss,
 
         // volumes
         menuVolume: 0.3,
@@ -408,4 +409,14 @@ function audio_play_jump()
     }
 
     audio_play_sfx(global.audio.jump, global.audio.sfxVolume, random_range(0.95, 1.05));
+}
+
+function audio_play_letter_kiss()
+{
+    if (!variable_global_exists("audio"))
+    {
+        return;
+    }
+
+    audio_play_sfx(global.audio.letterKiss, global.audio.sfxVolume, 1);
 }
