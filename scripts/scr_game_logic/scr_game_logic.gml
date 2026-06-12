@@ -729,6 +729,11 @@ function game_start_next_pre_combat_dialogue()
         return game_start_necro_intro_dialogue();
     }
 
+    if (global.currentFight == 10)
+    {
+        return game_start_necro_phase_two_dialogue();
+    }
+
     if (global.preCombatDialogueStep > 0)
     {
         return false;
@@ -744,15 +749,55 @@ function game_start_necro_intro_dialogue()
     switch (global.preCombatDialogueStep)
     {
         case 0:
-            game_create_pre_combat_dialogue_box(game_get_enemy_face_sprite(), dialogue_get_necro_intro_one(), game_get_enemy_display_name(), 2);
+            game_create_pre_combat_dialogue_box(spr_player_face, dialogue_get_necro_player_hello(), game_get_player_display_name(), 2, 0);
         break;
 
         case 1:
-            game_create_pre_combat_dialogue_box(spr_player_face, dialogue_get_necro_player_reply(), game_get_player_display_name(), 2, 0);
+            game_create_pre_combat_dialogue_box(game_get_enemy_face_sprite(), dialogue_get_necro_intro_one(), game_get_enemy_display_name(), 2);
         break;
 
         case 2:
+            game_create_pre_combat_dialogue_box(spr_player_face, dialogue_get_necro_player_aunt_rose(), game_get_player_display_name(), 2, 0);
+        break;
+
+        case 3:
             game_create_pre_combat_dialogue_box(game_get_enemy_face_sprite(), dialogue_get_necro_intro_two(), game_get_enemy_display_name(), 2);
+        break;
+
+        case 4:
+            game_create_pre_combat_dialogue_box(spr_player_face, dialogue_get_necro_player_eviction(), game_get_player_display_name(), 1, 0);
+        break;
+
+        case 5:
+            game_create_pre_combat_dialogue_box(game_get_enemy_face_sprite(), dialogue_get_necro_intro_three(), game_get_enemy_display_name(), 2);
+        break;
+
+        default:
+            return false;
+    }
+
+    global.preCombatDialogueStep += 1;
+    return true;
+}
+
+function game_start_necro_phase_two_dialogue()
+{
+    switch (global.preCombatDialogueStep)
+    {
+        case 0:
+            game_create_pre_combat_dialogue_box(game_get_enemy_face_sprite(), dialogue_get_necro_phase_two_one(), game_get_enemy_display_name(), 2);
+        break;
+
+        case 1:
+            game_create_pre_combat_dialogue_box(spr_player_face, dialogue_get_necro_phase_two_player(), game_get_player_display_name(), 2, 0);
+        break;
+
+        case 2:
+            game_create_pre_combat_dialogue_box(game_get_enemy_face_sprite(), dialogue_get_necro_phase_two_two(), game_get_enemy_display_name(), 2);
+        break;
+
+        case 3:
+            game_create_pre_combat_dialogue_box(game_get_enemy_face_sprite(), dialogue_get_necro_phase_two_three(), game_get_enemy_display_name(), 2);
         break;
 
         default:

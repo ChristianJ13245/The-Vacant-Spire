@@ -57,28 +57,63 @@ function dialogue_get_fight_intro(_fight)
 			return "Steve has been training.";
 
 		case 9:
-			return dialogue_get_necro_intro_one();
+			return dialogue_get_necro_player_hello();
 
 		case 10:
-			return "Call an ambulance! ...? But not for me. BEHOLD MY TRUE FORM!";
+			return dialogue_get_necro_phase_two_one();
 	}
 
 	return "Click to skip text, then click again to start.";
 }
 
-function dialogue_get_necro_intro_one()
+function dialogue_get_necro_player_hello()
 {
-    return "Hello there. Sigh. Become a necromancer, they said. Minions will do it all for you, they said.";
+    return "Hello there.";
 }
 
-function dialogue_get_necro_player_reply()
+function dialogue_get_necro_intro_one()
 {
-    return "Ah yes, such as the mighty Aunt Rose. Well, what business do you have in MY wizard tower? I happen to have a legally and magically binding eviction notice, issued by the Grand Wizarding Council.";
+    return "Sigh. Become a necromancer, they said. Minions will do it all for you, they said.";
+}
+
+function dialogue_get_necro_player_aunt_rose()
+{
+    return "Ah yes, such as the mighty Aunt Rose.";
 }
 
 function dialogue_get_necro_intro_two()
 {
+    return "Well, what business do you have in MY wizard tower?";
+}
+
+function dialogue_get_necro_player_eviction()
+{
+    return "Well, I happen to have a legally and magically binding eviction notice, issued by the Grand Wizarding Council.";
+}
+
+function dialogue_get_necro_intro_three()
+{
     return "How magically binding is an eviction notice held by a dead man?";
+}
+
+function dialogue_get_necro_phase_two_one()
+{
+    return "Call an ambulance!";
+}
+
+function dialogue_get_necro_phase_two_player()
+{
+    return "...?";
+}
+
+function dialogue_get_necro_phase_two_two()
+{
+    return "But not for me.";
+}
+
+function dialogue_get_necro_phase_two_three()
+{
+    return "BEHOLD MY TRUE FORM!";
 }
 
 function dialogue_get_fight_char_delay(_fight)
@@ -256,7 +291,8 @@ function dialogue_draw_skip_button(_boxW)
 	draw_set_halign(fa_center);
 	draw_set_valign(fa_middle);
 	draw_set_font(fnt_dialogueBoxText);
-	draw_text_transformed(_buttonX + (_buttonW * 0.5), _buttonY + (_buttonH * 0.5), "Skip", _scale, _scale, 0);
+	var _textScale = _scale * 1.8;
+	draw_text_transformed(_buttonX + (_buttonW * 0.5), _buttonY + (_buttonH * 0.5), "Next", _textScale, _textScale, 0);
 	draw_set_font(-1);
 	draw_set_halign(fa_left);
 	draw_set_valign(fa_top);
