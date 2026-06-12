@@ -237,7 +237,7 @@ function ui_draw_scroll_button(_x, _y, _w, _h, _label, _scale, _hover)
 function ui_draw_skip_button()
 {
     var _guiW = display_get_gui_width();
-    ui_button(_guiW - 136, 20, 112, 34, "Skip");
+    ui_button(_guiW - 136, 20, 112, 34, "Next");
 }
 
 function ui_button_hover_sound(_x, _y, _w, _h, _label, _hover)
