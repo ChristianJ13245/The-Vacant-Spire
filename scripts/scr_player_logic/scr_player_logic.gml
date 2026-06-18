@@ -66,6 +66,7 @@ function player_create()
 
     // sprites
     sprIdle = asset_get_index("spr_player_idle");
+    sprWalk = asset_get_index("spr_player_walk");
     sprCastLow = asset_get_index("spr_player_cast_low");
     sprCastMid = asset_get_index("spr_player_cast_mid");
     sprCastHigh = asset_get_index("spr_player_cast_high");
@@ -485,6 +486,24 @@ function player_set_idle_animation()
     drawSprite = sprIdle;
     drawFrame = 0;
     animTick = 0;
+}
+
+function player_set_walk_animation()
+{
+    castTimer = 0;
+
+    if (sprWalk == -1)
+    {
+        player_set_idle_animation();
+        return;
+    }
+
+    if (drawSprite != sprWalk)
+    {
+        drawSprite = sprWalk;
+        drawFrame = 0;
+        animTick = 0;
+    }
 }
 
 function player_set_cast_animation(_pose)

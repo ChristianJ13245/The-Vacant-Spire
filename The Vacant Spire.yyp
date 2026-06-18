@@ -87,6 +87,7 @@
     {"id":{"name":"spr_denied","path":"sprites/spr_denied/spr_denied.yy",},"order":8,},
     {"id":{"name":"spr_butler_white_attack","path":"sprites/spr_butler_white_attack/spr_butler_white_attack.yy",},"order":4,},
     {"id":{"name":"spr_top_floor","path":"sprites/spr_top_floor/spr_top_floor.yy",},"order":1,},
+    {"id":{"name":"spr_player_walk","path":"sprites/spr_player_walk/spr_player_walk.yy",},"order":5,},
     {"id":{"name":"spr_player_face","path":"sprites/spr_player_face/spr_player_face.yy",},"order":4,},
     {"id":{"name":"obj_dialogueBox","path":"objects/obj_dialogueBox/obj_dialogueBox.yy",},"order":4,},
     {"id":{"name":"spr_butler_white_to_black","path":"sprites/spr_butler_white_to_black/spr_butler_white_to_black.yy",},"order":5,},

@@ -877,6 +877,25 @@ function ui_draw_transparent_box(_x, _y, _w, _h)
     draw_rectangle(_x, _y, _x + _w, _y + _h, true);
 }
 
+function ui_draw_spell_hud_box(_x, _y, _w, _h, _element)
+{
+    var _colour = ui_get_spell_hud_colour(_element);
+
+    draw_set_alpha(0.62);
+    draw_set_colour(c_black);
+    draw_rectangle(_x, _y, _x + _w, _y + _h, false);
+
+    draw_set_alpha(ui_get_spell_hud_alpha(_element));
+    draw_set_colour(_colour);
+    draw_rectangle(_x, _y, _x + _w, _y + _h, false);
+
+    draw_set_alpha(1);
+    draw_set_colour(_colour);
+    draw_rectangle(_x, _y, _x + _w, _y + _h, true);
+    draw_rectangle(_x + 2, _y + 2, _x + _w - 2, _y + _h - 2, true);
+    draw_set_colour(c_white);
+}
+
 function ui_draw_spell_controls()
 {
     var _guiW = display_get_gui_width();
@@ -886,9 +905,11 @@ function ui_draw_spell_controls()
     var _boxH = 92;
     var _boxX = (_guiW - _boxW) * 0.5;
     var _boxY = _guiH - _boxH - 24;
+    var _element = ui_get_selected_spell_element();
 
     // bottom control box
-    ui_draw_transparent_box(_boxX, _boxY, _boxW, _boxH);
+    ui_draw_spell_hud_box(_boxX, _boxY, _boxW, _boxH, _element);
+    ui_draw_selected_spell_icon(_boxX + 58, _boxY + (_boxH * 0.5), 108, _element);
 
     draw_set_halign(fa_center);
     draw_set_valign(fa_top);
@@ -899,10 +920,86 @@ function ui_draw_spell_controls()
     // current spell setup
     ui_draw_text(_guiW * 0.5, _boxY + 36, "Spell: " + string(global.inputText));
 
-    ui_draw_charge_bar(_boxX + 64, _boxY + 62, _boxW - 128, 18);
+    ui_draw_charge_bar(_boxX + 104, _boxY + 62, _boxW - 168, 18);
 
     draw_set_halign(fa_left);
     draw_set_valign(fa_top);
+}
+
+function ui_get_selected_spell_element()
+{
+    if (instance_exists(global.player))
+    {
+        if (variable_instance_exists(global.player, "selectedElement"))
+        {
+            return global.player.selectedElement;
+        }
+    }
+
+    return SpellElement.FIRE;
+}
+
+function ui_get_spell_hud_colour(_element)
+{
+    if (_element == SpellElement.FIRE)
+    {
+        return make_colour_rgb(255, 80, 45);
+    }
+
+    if (_element == SpellElement.WATER)
+    {
+        return make_colour_rgb(70, 150, 255);
+    }
+
+    return c_white;
+}
+
+function ui_get_spell_hud_alpha(_element)
+{
+    if (_element == SpellElement.AIR)
+    {
+        return 0.13;
+    }
+
+    return 0.2;
+}
+
+function ui_get_selected_spell_sprite(_element)
+{
+    if (instance_exists(global.player))
+    {
+        if (_element == SpellElement.FIRE && variable_instance_exists(global.player, "sprPreviewFire"))
+        {
+            return global.player.sprPreviewFire;
+        }
+
+        if (_element == SpellElement.WATER && variable_instance_exists(global.player, "sprPreviewWater"))
+        {
+            return global.player.sprPreviewWater;
+        }
+
+        if (variable_instance_exists(global.player, "sprPreviewAir"))
+        {
+            return global.player.sprPreviewAir;
+        }
+    }
+
+    return -1;
+}
+
+function ui_draw_selected_spell_icon(_x, _y, _size, _element)
+{
+    var _sprite = ui_get_selected_spell_sprite(_element);
+
+    if (_sprite == -1)
+    {
+        return;
+    }
+
+    var _scale = min(_size / sprite_get_width(_sprite), _size / sprite_get_height(_sprite));
+
+    draw_set_colour(c_white);
+    ui_draw_sprite_centered(_sprite, _x, _y, _scale);
 }
 
 function ui_draw_charge_bar(_x, _y, _w, _h)

@@ -749,7 +749,7 @@ function game_start_necro_intro_dialogue()
     switch (global.preCombatDialogueStep)
     {
         case 0:
-            game_create_pre_combat_dialogue_box(spr_player_face, dialogue_get_necro_player_hello(), game_get_player_display_name(), 2, 0);
+            game_create_pre_combat_dialogue_box(game_get_player_face_sprite(), dialogue_get_necro_player_hello(), game_get_player_display_name(), 2, 0);
         break;
 
         case 1:
@@ -757,7 +757,7 @@ function game_start_necro_intro_dialogue()
         break;
 
         case 2:
-            game_create_pre_combat_dialogue_box(spr_player_face, dialogue_get_necro_player_aunt_rose(), game_get_player_display_name(), 2, 0);
+            game_create_pre_combat_dialogue_box(game_get_player_face_sprite(), dialogue_get_necro_player_aunt_rose(), game_get_player_display_name(), 2, 0);
         break;
 
         case 3:
@@ -765,7 +765,7 @@ function game_start_necro_intro_dialogue()
         break;
 
         case 4:
-            game_create_pre_combat_dialogue_box(spr_player_face, dialogue_get_necro_player_eviction(), game_get_player_display_name(), 1, 0);
+            game_create_pre_combat_dialogue_box(game_get_player_face_sprite(), dialogue_get_necro_player_eviction(), game_get_player_display_name(), 1, 0);
         break;
 
         case 5:
@@ -789,7 +789,7 @@ function game_start_necro_phase_two_dialogue()
         break;
 
         case 1:
-            game_create_pre_combat_dialogue_box(spr_player_face, dialogue_get_necro_phase_two_player(), game_get_player_display_name(), 2, 0);
+            game_create_pre_combat_dialogue_box(game_get_player_face_sprite(), dialogue_get_necro_phase_two_player(), game_get_player_display_name(), 2, 0);
         break;
 
         case 2:
@@ -823,6 +823,11 @@ function game_create_pre_combat_dialogue_box(_portraitSprite, _text, _speakerNam
 function game_get_enemy_display_name()
 {
     return game_get_enemy_var("displayName", "the enemy");
+}
+
+function game_get_player_face_sprite()
+{
+    return spr_player_face;
 }
 
 function game_get_player_display_name()
@@ -953,10 +958,15 @@ function game_set_player_transition_anim()
     }
 
     global.player.facing = 1;
-    game_clear_player_cast_state();
+    game_clear_player_cast_state(false);
 
     with (global.player)
     {
+        if (variable_instance_exists(id, "sprWalk"))
+        {
+            player_set_walk_animation();
+        }
+
         if (variable_instance_exists(id, "drawSprite") && drawSprite != -1)
         {
             player_update_animation();
@@ -972,7 +982,7 @@ function game_clear_spells()
     }
 }
 
-function game_clear_player_cast_state()
+function game_clear_player_cast_state(_setIdle = true)
 {
     if (!instance_exists(global.player))
     {
@@ -996,7 +1006,7 @@ function game_clear_player_cast_state()
             castTimer = 0;
         }
 
-        if (variable_instance_exists(id, "sprIdle"))
+        if (_setIdle && variable_instance_exists(id, "sprIdle"))
         {
             if (!variable_instance_exists(id, "drawSprite") || drawSprite != sprIdle)
             {
