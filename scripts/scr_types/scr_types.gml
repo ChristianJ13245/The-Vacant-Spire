@@ -99,9 +99,6 @@ function PrototypeConfig() constructor
     // background layers
     battleBackgroundLayer = "BattleBackground";
     topFloorStart = 8;
-	
-	// toggle for quickly testing floor flow
-	debugInstaDefeat = true;
 }
 
 // spell object exists in the room, this struct stores what kind of spell it is

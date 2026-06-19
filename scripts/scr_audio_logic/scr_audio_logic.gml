@@ -6,6 +6,16 @@ function audio_manager_create()
 {
     if (variable_global_exists("audio"))
     {
+        if (!variable_struct_exists(global.audio, "muted"))
+        {
+            global.audio.muted = false;
+        }
+
+        if (!variable_struct_exists(global.audio, "browserMusicUnlocked"))
+        {
+            global.audio.browserMusicUnlocked = false;
+        }
+
         audio_pick_target_music();
 
         if (global.audio.targetMusic != global.audio.currentMusic)
@@ -56,6 +66,8 @@ function audio_manager_create()
         mainVolume: _mainVolume,
         musicVolume: _musicVolume,
         sfxControlVolume: _sfxControlVolume,
+        muted: false,
+        browserMusicUnlocked: false,
 
         // fade values
         currentVolume: 0,
@@ -80,6 +92,7 @@ function audio_manager_step()
     }
 
     audio_pick_target_music();
+    audio_step_browser_music_unlock();
 
     if (global.audio.targetMusic != global.audio.currentMusic)
     {
@@ -87,6 +100,46 @@ function audio_manager_step()
     }
 
     audio_fade_music_volume();
+}
+
+function audio_step_browser_music_unlock()
+{
+    if (!variable_global_exists("audio"))
+    {
+        return;
+    }
+
+    if (global.audio.browserMusicUnlocked)
+    {
+        return;
+    }
+
+    if (mouse_check_button_pressed(mb_left)
+    || mouse_check_button_pressed(mb_right)
+    || keyboard_check_pressed(vk_enter)
+    || keyboard_check_pressed(vk_space))
+    {
+        audio_unlock_browser_music();
+    }
+}
+
+function audio_unlock_browser_music()
+{
+    if (!variable_global_exists("audio"))
+    {
+        return;
+    }
+
+    if (global.audio.browserMusicUnlocked
+    && global.audio.currentMusicId != -1
+    && audio_is_playing(global.audio.currentMusicId))
+    {
+        return;
+    }
+
+    global.audio.browserMusicUnlocked = true;
+    audio_pick_target_music();
+    audio_switch_music(global.audio.targetMusic);
 }
 
 function audio_pick_target_music()
@@ -251,6 +304,11 @@ function audio_get_music_volume(_baseVolume)
         return _baseVolume;
     }
 
+    if (global.audio.muted)
+    {
+        return 0;
+    }
+
     return _baseVolume * global.audio.mainVolume * global.audio.musicVolume;
 }
 
@@ -261,7 +319,34 @@ function audio_get_sfx_volume(_baseVolume)
         return _baseVolume;
     }
 
+    if (global.audio.muted)
+    {
+        return 0;
+    }
+
     return _baseVolume * global.audio.mainVolume * global.audio.sfxControlVolume;
+}
+
+function audio_set_muted(_muted)
+{
+    if (!variable_global_exists("audio"))
+    {
+        return;
+    }
+
+    global.audio.muted = _muted;
+    audio_master_gain(1 - real(_muted));
+    audio_apply_current_music_volume();
+}
+
+function audio_toggle_mute()
+{
+    if (!variable_global_exists("audio"))
+    {
+        return;
+    }
+
+    audio_set_muted(!global.audio.muted);
 }
 
 function audio_set_main_volume(_value)

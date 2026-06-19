@@ -462,7 +462,7 @@ function dialogue_skip_button_pressed()
 	{
 		return false;
 	}
-
+	audio_unlock_browser_music();
 	audio_play_button_click();
 	return true;
 }

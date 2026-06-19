@@ -106,11 +106,6 @@ function enemy_step()
         return;
     }
 	
-	if (global.config.debugInstaDefeat && keyboard_check_pressed(ord("0")))
-	{
-		currentHealth = 0;
-	}
-
     enemy_update_hit_flash();
 
     if (enemy_update_phase_intro())

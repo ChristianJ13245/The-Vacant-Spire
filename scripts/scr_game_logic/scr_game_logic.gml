@@ -19,6 +19,7 @@ function game_create()
     global.floorTransitionTimer = 0;
     global.floorTransitionCoverAmount = 0;
     global.volumeSliderDrag = "";
+    global.controlScheme = "keyboard";
     global.wizardName = "";
     global.storyStep = 0;
     global.storyTimer = 0;
@@ -30,12 +31,6 @@ function game_create()
 
 function game_step()
 {
-    if (game_step_debug_shortcuts())
-    {
-        game_update_battle_background();
-        return;
-    }
-
     // Only one state should run each frame to avoid conflicts
     // with game being paused and played at the same time
     switch (global.gameState)
@@ -113,68 +108,42 @@ function game_step()
     game_update_battle_background();
 }
 
-function game_step_debug_shortcuts()
+function game_step_mute_button()
 {
-    if (!global.config.debugInstaDefeat)
+    if (!variable_global_exists("audio"))
     {
         return false;
     }
 
-    if (keyboard_check_pressed(ord("9")))
+    if (!ui_mute_button_clicked())
     {
-        game_debug_skip_to_necromancer();
-        return true;
+        return false;
     }
 
-    if (keyboard_check_pressed(ord("8")))
+    var _wasMuted = global.audio.muted;
+    audio_toggle_mute();
+
+    if (_wasMuted)
     {
-        game_debug_skip_to_ending();
-        return true;
+        audio_unlock_browser_music();
+        audio_play_button_click();
     }
 
-    return false;
-}
-
-function game_debug_skip_to_necromancer()
-{
-    // 9 jumps to necro so testing doesnt take forever
-    game_clear_battle_instances();
-
-    global.currentFight = 9;
-    global.currentFloor = game_floor_from_fight(global.currentFight);
-    global.gameState = GameState.PRE_COMBAT;
-    global.preCombatTimer = room_speed * 0.5;
-    global.preCombatDialogueStarted = false;
-    global.preCombatDialogueStep = 0;
-    global.floorTransitionPhase = 0;
-    global.floorTransitionTimer = 0;
-    global.floorTransitionCoverAmount = 0;
-
-    game_spawn_player();
-    game_spawn_enemy();
-}
-
-function game_debug_skip_to_ending()
-{
-    // 8 jumps to the ending so we can check credits fast
-    game_clear_battle_instances();
-
-    global.currentFight = global.config.maxFight;
-    global.currentFloor = game_floor_from_fight(global.currentFight);
-    global.floorTransitionPhase = 0;
-    global.floorTransitionTimer = 0;
-    global.floorTransitionCoverAmount = 0;
-
-    game_start_victory_story();
+    return true;
 }
 
 function game_step_menu()
 {
+    if (game_step_mute_button())
+    {
+        return;
+    }
+
     var _guiW = display_get_gui_width();
     var _buttonW = 240;
     var _buttonH = 52;
     var _buttonX = (_guiW - _buttonW) * 0.5;
-    var _buttonY = 310;
+    var _buttonY = ui_main_menu_button_y();
     var _gap = 16;
 
     // button clicked, start the run
@@ -190,12 +159,8 @@ function game_step_menu()
         return;
     }
 
-    if (ui_button_clicked(_buttonX, _buttonY + ((_buttonH + _gap) * 2), _buttonW, _buttonH))
-    {
-        game_end();
-        return;
-    }
 }
+
 
 function game_step_help(_backState)
 {
@@ -216,7 +181,25 @@ function game_step_help(_backState)
         return;
     }
 
+    if (ui_control_scheme_button_clicked())
+    {
+        game_toggle_control_scheme();
+        return;
+    }
+
     game_step_help_volume_sliders();
+}
+
+function game_toggle_control_scheme()
+{
+    if (!variable_global_exists("controlScheme") || global.controlScheme == "keyboard")
+    {
+        global.controlScheme = "mouse";
+    }
+    else
+    {
+        global.controlScheme = "keyboard";
+    }
 }
 
 function game_step_help_volume_sliders()
@@ -230,7 +213,7 @@ function game_step_help_volume_sliders()
     var _sliderW = 420;
     var _sliderX = (_guiW - _sliderW) * 0.5;
     var _sliderH = 22;
-    var _sliderY = 500;
+    var _sliderY = 570;
     var _gap = 48;
 
     var _mainVolume = ui_volume_slider_input(_sliderX, _sliderY, _sliderW, _sliderH, "main", global.audio.mainVolume);
@@ -369,8 +352,9 @@ function game_step_victory_story()
 
     if (game_story_advance_pressed())
     {
-        global.gameState = GameState.CREDITS;
+        global.gameState = GameState.FINAL_ENDING;
         global.storyTimer = 0;
+        global.deniedDrop = -220;
     }
 }
 
@@ -389,9 +373,9 @@ function game_step_credits()
 function game_step_FINAL_ENDING()
 {
     global.storyTimer += 1;
-    var _dropTarget = display_get_gui_height() * 0.28;
+    var _dropTarget = display_get_gui_height() * 0.37;
 
-    if (global.deniedDrop < _dropTarget && game_story_skip_button_clicked())
+    if (game_story_skip_button_clicked())
     {
         global.gameState = GameState.FINAL_CREDITS;
         global.storyTimer = 0;
@@ -401,19 +385,6 @@ function game_step_FINAL_ENDING()
     if (global.storyTimer > room_speed * 2)
     {
         global.deniedDrop = min(_dropTarget, global.deniedDrop + 14);
-    }
-
-    var _guiW = display_get_gui_width();
-    var _buttonW = 240;
-    var _buttonH = 52;
-    var _buttonX = (_guiW - _buttonW) * 0.5;
-    var _buttonY = display_get_gui_height() - 82;
-
-    if (global.deniedDrop >= _dropTarget
-    && ui_button_clicked(_buttonX, _buttonY, _buttonW, _buttonH))
-    {
-        global.gameState = GameState.FINAL_CREDITS;
-        global.storyTimer = 0;
     }
 }
 
@@ -427,8 +398,8 @@ function game_step_final_credits()
     var _buttonX = (_guiW - _buttonW) * 0.5;
     var _buttonY = display_get_gui_height() - 82;
 
-    if (global.storyTimer >= room_speed * 8
-    || ui_button_clicked(_buttonX, _buttonY, _buttonW, _buttonH))
+    if (global.storyTimer >= room_speed * 18
+    || (ui_final_credits_main_menu_ready() && ui_button_clicked(_buttonX, _buttonY, _buttonW, _buttonH)))
     {
         game_back_to_menu();
     }
@@ -627,6 +598,11 @@ function game_step_floor_transition()
 
 function game_step_paused()
 {
+    if (game_step_mute_button())
+    {
+        return;
+    }
+
     var _guiW = display_get_gui_width();
     var _buttonW = 240;
     var _buttonH = 50;
@@ -675,7 +651,30 @@ function game_step_end_state()
     var _buttonY = 360;
     var _gap = 16;
 
-    // restart after a win or loss
+    if (global.gameState == GameState.LOST)
+    {
+        if (ui_button_clicked(_buttonX, _buttonY, _buttonW, _buttonH))
+        {
+            game_restart_floor();
+            return;
+        }
+
+        if (ui_button_clicked(_buttonX, _buttonY + (_buttonH + _gap), _buttonW, _buttonH))
+        {
+            game_start_new_run();
+            return;
+        }
+
+        if (ui_button_clicked(_buttonX, _buttonY + ((_buttonH + _gap) * 2), _buttonW, _buttonH))
+        {
+            game_back_to_menu();
+            return;
+        }
+
+        return;
+    }
+
+    // restart after a win
     if (ui_button_clicked(_buttonX, _buttonY, _buttonW, _buttonH))
     {
         game_start_new_run();
@@ -898,6 +897,7 @@ function game_advance_floor()
     // actual new floor, let the player walk there
     game_clear_spells();
     game_clear_player_cast_state();
+    game_ground_player();
 
     with (obj_enemy)
     {
@@ -943,10 +943,7 @@ function game_reset_player_for_new_floor()
     global.player.currentHealth = global.player.maxHealth;
     global.player.currentMana = global.player.maxMana;
     global.player.isDead = false;
-    global.player.jumpOffset = 0;
-    global.player.jumpVelocity = 0;
-    global.player.isJumping = false;
-    global.player.jumpCount = 0;
+    game_ground_player();
     game_clear_player_cast_state();
 }
 
@@ -959,6 +956,7 @@ function game_set_player_transition_anim()
 
     global.player.facing = 1;
     game_clear_player_cast_state(false);
+    game_ground_player();
 
     with (global.player)
     {
@@ -970,6 +968,37 @@ function game_set_player_transition_anim()
         if (variable_instance_exists(id, "drawSprite") && drawSprite != -1)
         {
             player_update_animation();
+        }
+    }
+}
+
+function game_ground_player()
+{
+    if (!instance_exists(global.player))
+    {
+        return;
+    }
+
+    with (global.player)
+    {
+        if (variable_instance_exists(id, "jumpOffset"))
+        {
+            jumpOffset = 0;
+        }
+
+        if (variable_instance_exists(id, "jumpVelocity"))
+        {
+            jumpVelocity = 0;
+        }
+
+        if (variable_instance_exists(id, "isJumping"))
+        {
+            isJumping = false;
+        }
+
+        if (variable_instance_exists(id, "jumpCount"))
+        {
+            jumpCount = 0;
         }
     }
 }

@@ -178,6 +178,7 @@ function ui_button_clicked(_x, _y, _w, _h)
 
     if (_clicked)
     {
+        audio_unlock_browser_music();
         audio_play_button_click();
     }
 
@@ -234,6 +235,60 @@ function ui_draw_scroll_button(_x, _y, _w, _h, _label, _scale, _hover)
     draw_set_colour(c_white);
 }
 
+function ui_mute_button_size()
+{
+    return 48;
+}
+
+function ui_mute_button_x()
+{
+    return display_get_gui_width() - ui_mute_button_size() - 24;
+}
+
+function ui_mute_button_y()
+{
+    return 24;
+}
+
+function ui_mute_button_clicked()
+{
+    var _size = ui_mute_button_size();
+    return ui_button_clicked(ui_mute_button_x(), ui_mute_button_y(), _size, _size);
+}
+
+function ui_draw_mute_button()
+{
+    var _size = ui_mute_button_size();
+    var _x = ui_mute_button_x();
+    var _y = ui_mute_button_y();
+    var _hover = ui_mouse_in_rect(_x, _y, _size, _size);
+    var _scale = 1;
+    var _frame = 0;
+
+    if (_hover)
+    {
+        _scale = 1.08;
+    }
+
+    if (variable_global_exists("audio"))
+    {
+        if (global.audio.muted)
+        {
+            _frame = 1;
+        }
+    }
+
+    ui_button_hover_sound(_x, _y, _size, _size, "mute", _hover);
+
+    var _drawSize = _size * _scale;
+    var _spriteScale = _drawSize / max(sprite_get_width(spr_mute_button), sprite_get_height(spr_mute_button));
+    var _left = _x + (_size * 0.5) - ((sprite_get_width(spr_mute_button) * _spriteScale) * 0.5);
+    var _top = _y + (_size * 0.5) - ((sprite_get_height(spr_mute_button) * _spriteScale) * 0.5);
+    var _spriteX = _left + (sprite_get_xoffset(spr_mute_button) * _spriteScale);
+    var _spriteY = _top + (sprite_get_yoffset(spr_mute_button) * _spriteScale);
+
+    draw_sprite_ext(spr_mute_button, _frame, _spriteX, _spriteY, _spriteScale, _spriteScale, 0, c_white, 1);
+}
 function ui_draw_skip_button()
 {
     var _guiW = display_get_gui_width();
@@ -283,6 +338,7 @@ function ui_volume_slider_input(_x, _y, _w, _h, _id, _value)
     if (mouse_check_button_pressed(mb_left) && _hover)
     {
         global.volumeSliderDrag = _id;
+        audio_unlock_browser_music();
         audio_play_button_click();
     }
 
@@ -326,6 +382,51 @@ function ui_draw_volume_slider(_x, _y, _w, _label, _value)
 
     draw_set_colour(c_black);
     draw_circle(_knobX, _knobY, _knobSize * 0.5, true);
+}
+
+function ui_uses_mouse_control_scheme()
+{
+    return variable_global_exists("controlScheme") && global.controlScheme == "mouse";
+}
+
+function ui_control_scheme_button_w()
+{
+    return 280;
+}
+
+function ui_control_scheme_button_h()
+{
+    return 42;
+}
+
+function ui_control_scheme_button_x()
+{
+    return (display_get_gui_width() - ui_control_scheme_button_w()) * 0.5;
+}
+
+function ui_control_scheme_button_y()
+{
+    return 462;
+}
+
+function ui_control_scheme_button_clicked()
+{
+    return ui_button_clicked(
+        ui_control_scheme_button_x(),
+        ui_control_scheme_button_y(),
+        ui_control_scheme_button_w(),
+        ui_control_scheme_button_h()
+    );
+}
+
+function ui_control_scheme_button_label()
+{
+    if (ui_uses_mouse_control_scheme())
+    {
+        return "Mouse Spells";
+    }
+
+    return "Keyboard Spells";
 }
 
 function ui_draw_intro()
@@ -515,14 +616,12 @@ function ui_draw_credits()
     var _guiW = display_get_gui_width();
     var _guiH = display_get_gui_height();
 
-    draw_set_colour(c_black);
-    draw_rectangle(0, 0, _guiW, _guiH, false);
+    ui_draw_splash_background(0.58);
 
     draw_set_colour(c_white);
     draw_set_halign(fa_center);
     draw_set_valign(fa_middle);
-    ui_draw_text(_guiW * 0.5, _guiH * 0.36, "The Vacant Spire");
-    ui_draw_text(_guiW * 0.5, _guiH * 0.56, "Thank you for playing");
+    draw_text_transformed(_guiW * 0.5, _guiH * 0.5, "Thank you for playing", ui_text_scale() * 2, ui_text_scale() * 2, 0);
 
     ui_draw_skip_button();
 
@@ -535,11 +634,10 @@ function ui_draw_FINAL_ENDING()
     var _guiW = display_get_gui_width();
     var _guiH = display_get_gui_height();
 
-    draw_set_colour(c_black);
-    draw_rectangle(0, 0, _guiW, _guiH, false);
+    ui_draw_splash_background(0.58);
 
-    var _bubbleY = _guiH * 0.28;
-    var _skullY = _guiH * 0.64;
+    var _bubbleY = _guiH * 0.37;
+    var _skullY = _guiH * 0.7;
 
     ui_draw_sprite_centered(spr_ending_necro_skull, _guiW * 0.5, _skullY, 2);
     ui_draw_sprite_centered(spr_ending_speech_bubble, _guiW * 0.5, _bubbleY, 1);
@@ -551,14 +649,7 @@ function ui_draw_FINAL_ENDING()
 
     ui_draw_sprite_centered_rotated(spr_denied, _guiW * 0.5, global.deniedDrop, 1, 45);
 
-    if (global.deniedDrop >= _bubbleY)
-    {
-        ui_button((_guiW - 240) * 0.5, _guiH - 82, 240, 52, "Main Menu");
-    }
-    else
-    {
-        ui_draw_skip_button();
-    }
+    ui_draw_skip_button();
 
     draw_set_halign(fa_left);
     draw_set_valign(fa_top);
@@ -569,23 +660,38 @@ function ui_draw_final_credits()
     var _guiW = display_get_gui_width();
     var _guiH = display_get_gui_height();
 
-    draw_set_colour(c_black);
-    draw_rectangle(0, 0, _guiW, _guiH, false);
+    ui_draw_splash_background(0.58);
 
     draw_set_colour(c_white);
     draw_set_halign(fa_center);
     draw_set_valign(fa_middle);
 
-    ui_draw_text(_guiW * 0.5, _guiH * 0.2, "Credits");
-    ui_draw_text(_guiW * 0.5, _guiH * 0.36, "Artists");
-    ui_draw_text(_guiW * 0.5, _guiH * 0.43, "Brandon   Carly   Jihun");
-    ui_draw_text(_guiW * 0.5, _guiH * 0.56, "Programmers");
-    ui_draw_text(_guiW * 0.5, _guiH * 0.63, "Riley   Christian");
+    var _scrollY = _guiH + 40 - (global.storyTimer * 1.35);
 
-    ui_button((_guiW - 240) * 0.5, _guiH - 82, 240, 52, "Main Menu");
+    ui_draw_title_icon(_guiW * 0.5, _scrollY, _guiW * 0.34, _guiH * 0.28);
+    draw_text_transformed(_guiW * 0.5, _scrollY + 180, "Credits", ui_text_scale() * 2, ui_text_scale() * 2, 0);
+    ui_draw_text(_guiW * 0.5, _scrollY + 295, "Artists");
+    ui_draw_text(_guiW * 0.5, _scrollY + 350, "Brandon   Carly   Jihun");
+    ui_draw_text(_guiW * 0.5, _scrollY + 465, "Programmers");
+    ui_draw_text(_guiW * 0.5, _scrollY + 520, "Riley   Christian");
+    ui_draw_text(_guiW * 0.5, _scrollY + 650, "Thank you for playing");
+
+    if (ui_final_credits_main_menu_ready())
+    {
+        ui_button((_guiW - 240) * 0.5, _guiH - 82, 240, 52, "Main Menu");
+    }
 
     draw_set_halign(fa_left);
     draw_set_valign(fa_top);
+}
+
+function ui_final_credits_main_menu_ready()
+{
+    var _guiH = display_get_gui_height();
+    var _scrollY = _guiH + 40 - (global.storyTimer * 1.35);
+    var _thanksY = _scrollY + 650;
+
+    return _thanksY <= _guiH * 0.5;
 }
 
 function ui_draw_phase_two_defeat()
@@ -593,8 +699,7 @@ function ui_draw_phase_two_defeat()
     var _guiW = display_get_gui_width();
     var _guiH = display_get_gui_height();
 
-    draw_set_colour(c_black);
-    draw_rectangle(0, 0, _guiW, _guiH, false);
+    ui_draw_splash_background(0.58);
 
     draw_set_colour(c_white);
     draw_set_halign(fa_center);
@@ -645,6 +750,12 @@ function ui_draw_splash_background(_darkAlpha)
 function ui_draw_sprite_centered(_sprite, _x, _y, _scale)
 {
     ui_draw_sprite_top_left(_sprite, _x - (sprite_get_width(_sprite) * _scale * 0.5), _y - (sprite_get_height(_sprite) * _scale * 0.5), _scale);
+}
+
+function ui_draw_title_icon(_x, _y, _maxW, _maxH)
+{
+    var _scale = min(_maxW / sprite_get_width(spr_title_icon), _maxH / sprite_get_height(spr_title_icon));
+    ui_draw_sprite_centered(spr_title_icon, _x, _y, _scale);
 }
 
 function ui_draw_sprite_bottom_centered(_sprite, _x, _bottomY, _scale)
@@ -718,6 +829,11 @@ function ui_draw_sprite_top_left(_sprite, _x, _y, _scale)
     draw_sprite_ext(_sprite, 0, _x + (sprite_get_xoffset(_sprite) * _scale), _y + (sprite_get_yoffset(_sprite) * _scale), _scale, _scale, 0, c_white, 1);
 }
 
+function ui_main_menu_button_y()
+{
+    return min(390, display_get_gui_height() - 222);
+}
+
 function ui_draw_main_menu()
 {
     var _guiW = display_get_gui_width();
@@ -728,18 +844,18 @@ function ui_draw_main_menu()
     draw_set_halign(fa_center);
     draw_set_colour(c_white);
 
-    ui_draw_text(_guiW * 0.5, 140, "THE VACANT SPIRE");
-    ui_draw_text(_guiW * 0.5, 180, "Reclaim your tower and serve the necromancer with legal nonsense!");
+    ui_draw_title_icon(_guiW * 0.5, min(190, _guiH * 0.265), _guiW * 0.42, _guiH * 0.3);
+    ui_draw_text(_guiW * 0.5, min(330, _guiH * 0.46), "Reclaim your tower and serve the necromancer with legal nonsense!");
 
     var _buttonW = 240;
     var _buttonH = 52;
     var _buttonX = (_guiW - _buttonW) * 0.5;
-    var _buttonY = 310;
+    var _buttonY = ui_main_menu_button_y();
     var _gap = 16;
 
     ui_button(_buttonX, _buttonY, _buttonW, _buttonH, "Play");
     ui_button(_buttonX, _buttonY + (_buttonH + _gap), _buttonW, _buttonH, "Controls");
-    ui_button(_buttonX, _buttonY + ((_buttonH + _gap) * 2), _buttonW, _buttonH, "Quit");
+    ui_draw_mute_button();
 
     draw_set_halign(fa_left);
 }
@@ -752,15 +868,11 @@ function ui_draw_help_screen(_backState)
     if (_backState == GameState.PAUSED)
     {
         // darker overlay when help opens from pause
-        draw_set_alpha(0.82);
-        draw_set_colour(c_black);
-        draw_rectangle(0, 0, _guiW, _guiH, false);
-        draw_set_alpha(1);
+        ui_draw_splash_background(0.82);
     }
     else
     {
-        draw_set_colour(c_black);
-        draw_rectangle(0, 0, _guiW, _guiH, false);
+        ui_draw_splash_background(0.58);
     }
 
     ui_button(24, 24, 120, 38, "Back");
@@ -772,22 +884,36 @@ function ui_draw_help_screen(_backState)
     ui_draw_text(_guiW * 0.5, 165, "Controls:");
     ui_draw_text(_guiW * 0.5, 190, "W / S = Move up and down");
     ui_draw_text(_guiW * 0.5, 215, "Space = Jump / Double Jump");
-    ui_draw_text(_guiW * 0.5, 240, "A / D = Change element");
-    ui_draw_text(_guiW * 0.5, 265, "Hold K = Charge spell");
-    ui_draw_text(_guiW * 0.5, 290, "Release K = Cast");
 
-    ui_draw_text(_guiW * 0.5, 350, "Fire beats Air   |   Air beats Water   |   Water beats Fire");
-    ui_draw_text(_guiW * 0.5, 390, "Beat the enemy to climb the spire.");
-    ui_draw_text(_guiW * 0.5, 420, "Esc pauses during battle.");
+    if (ui_uses_mouse_control_scheme())
+    {
+        ui_draw_text(_guiW * 0.5, 240, "Mouse Wheel = Change element");
+        ui_draw_text(_guiW * 0.5, 265, "Hold Left Click = Charge spell");
+        ui_draw_text(_guiW * 0.5, 290, "Release Left Click = Cast");
+    }
+    else
+    {
+        ui_draw_text(_guiW * 0.5, 240, "A / D = Change element");
+        ui_draw_text(_guiW * 0.5, 265, "Hold K = Charge spell");
+        ui_draw_text(_guiW * 0.5, 290, "Release K = Cast");
+    }
+
+    ui_draw_text(_guiW * 0.5, 330, "Fire beats Air   |   Air beats Water   |   Water beats Fire");
+    ui_draw_text(_guiW * 0.5, 365, "Beat the enemy to climb the spire.");
+    ui_draw_text(_guiW * 0.5, 395, "Esc pauses during battle.");
+
+    ui_draw_text(_guiW * 0.5, 440, "Control Scheme");
+    ui_button(ui_control_scheme_button_x(), ui_control_scheme_button_y(), ui_control_scheme_button_w(), ui_control_scheme_button_h(), ui_control_scheme_button_label());
 
     if (variable_global_exists("audio"))
     {
         var _sliderW = 420;
         var _sliderX = (_guiW - _sliderW) * 0.5;
-        var _sliderY = 500;
+        var _sliderY = 570;
         var _gap = 48;
 
-        ui_draw_text(_guiW * 0.5, 465, "Volume");
+        draw_set_halign(fa_center);
+        ui_draw_text(_guiW * 0.5, 535, "Volume");
         ui_draw_volume_slider(_sliderX, _sliderY, _sliderW, "Main", global.audio.mainVolume);
         ui_draw_volume_slider(_sliderX, _sliderY + _gap, _sliderW, "SFX", global.audio.sfxControlVolume);
         ui_draw_volume_slider(_sliderX, _sliderY + (_gap * 2), _sliderW, "Music", global.audio.musicVolume);
@@ -915,7 +1041,14 @@ function ui_draw_spell_controls()
     draw_set_valign(fa_top);
 
     // quick controls reminder
-    ui_draw_text(_guiW * 0.5, _boxY + 12, "W/S: Move     Space: Jump     A/D: Element     Hold K: Charge");
+    if (ui_uses_mouse_control_scheme())
+    {
+        ui_draw_text(_guiW * 0.5, _boxY + 12, "W/S: Move     Space: Jump     Wheel: Element     LMB: Charge");
+    }
+    else
+    {
+        ui_draw_text(_guiW * 0.5, _boxY + 12, "W/S: Move     Space: Jump     A/D: Element     Hold K: Charge");
+    }
 
     // current spell setup
     ui_draw_text(_guiW * 0.5, _boxY + 36, "Spell: " + string(global.inputText));
@@ -1073,6 +1206,7 @@ function ui_draw_pause_menu()
     ui_button(_buttonX, _buttonY + (_buttonH + _gap), _buttonW, _buttonH, "Controls");
     ui_button(_buttonX, _buttonY + ((_buttonH + _gap) * 2), _buttonW, _buttonH, "Restart Floor");
     ui_button(_buttonX, _buttonY + ((_buttonH + _gap) * 3), _buttonW, _buttonH, "Main Menu");
+    ui_draw_mute_button();
 
     draw_set_halign(fa_left);
 }
@@ -1239,9 +1373,7 @@ function ui_draw_end_menu(_title)
     var _guiW = display_get_gui_width();
     var _guiH = display_get_gui_height();
 
-    // full black background for end screen
-    draw_set_colour(c_black);
-    draw_rectangle(0, 0, _guiW, _guiH, false);
+    ui_draw_splash_background(0.58);
 
     draw_set_halign(fa_center);
     draw_set_colour(c_white);
@@ -1254,8 +1386,17 @@ function ui_draw_end_menu(_title)
     var _buttonY = 360;
     var _gap = 16;
 
-    ui_button(_buttonX, _buttonY, _buttonW, _buttonH, "Restart");
-    ui_button(_buttonX, _buttonY + (_buttonH + _gap), _buttonW, _buttonH, "Main Menu");
+    if (global.gameState == GameState.LOST)
+    {
+        ui_button(_buttonX, _buttonY, _buttonW, _buttonH, "Restart Floor");
+        ui_button(_buttonX, _buttonY + (_buttonH + _gap), _buttonW, _buttonH, "New Run");
+        ui_button(_buttonX, _buttonY + ((_buttonH + _gap) * 2), _buttonW, _buttonH, "Main Menu");
+    }
+    else
+    {
+        ui_button(_buttonX, _buttonY, _buttonW, _buttonH, "Restart");
+        ui_button(_buttonX, _buttonY + (_buttonH + _gap), _buttonW, _buttonH, "Main Menu");
+    }
 
     draw_set_halign(fa_left);
 }

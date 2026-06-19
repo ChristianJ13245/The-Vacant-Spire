@@ -1,6 +1,6 @@
 // charge-based spell input
-// A/D cycle element
-// K charges, releasing K casts
+// Keyboard: A/D cycle element, K charges, releasing K casts
+// Mouse: scroll wheel cycles element, left click charges, releasing left click casts
 // W/S movement and space jump live in player logic
 
 function player_input_create()
@@ -44,43 +44,74 @@ function player_input_step()
         playerCastCooldownTimer -= 1;
     }
 
-    // element can change at any time
-    // lets player switch element while holding a charged spell
-    if (keyboard_check_pressed(ord("A")))
+    var _useMouse = player_input_uses_mouse_scheme();
+    var _chargePressed = keyboard_check_pressed(castKey);
+    var _chargeHeld = keyboard_check(castKey);
+    var _chargeReleased = keyboard_check_released(castKey);
+
+    // element can change at any time, even while holding a charged spell
+    if (_useMouse)
     {
-        player_input_cycle_element(-1);
+        if (mouse_wheel_up())
+        {
+            player_input_cycle_element(-1);
+        }
+
+        if (mouse_wheel_down())
+        {
+            player_input_cycle_element(1);
+        }
+    }
+    else
+    {
+        if (keyboard_check_pressed(ord("A")))
+        {
+            player_input_cycle_element(-1);
+        }
+
+        if (keyboard_check_pressed(ord("D")))
+        {
+            player_input_cycle_element(1);
+        }
     }
 
-    if (keyboard_check_pressed(ord("D")))
+    if (_useMouse)
     {
-        player_input_cycle_element(1);
+        _chargePressed = mouse_check_button_pressed(mb_left);
+        _chargeHeld = mouse_check_button(mb_left);
+        _chargeReleased = mouse_check_button_released(mb_left);
     }
 
     // start charge
-    if (keyboard_check_pressed(castKey))
+    if (_chargePressed)
     {
         player_input_start_charge();
     }
 
-    // if K stayed held, start again once mana is full
-    if (!isCharging && keyboard_check(castKey) && player_input_can_auto_charge())
+    // if the cast input stayed held, start again once mana is full
+    if (!isCharging && _chargeHeld && player_input_can_auto_charge())
     {
         player_input_start_charge();
     }
 
-    // keep charging while K is held
-    if (isCharging && keyboard_check(castKey))
+    // keep charging while the cast input is held
+    if (isCharging && _chargeHeld)
     {
         player_input_update_charge();
     }
 
     // release to cast
-    if (isCharging && keyboard_check_released(castKey))
+    if (isCharging && _chargeReleased)
     {
         player_input_release_charge();
     }
 
     global.inputText = player_input_status_text();
+}
+
+function player_input_uses_mouse_scheme()
+{
+    return variable_global_exists("controlScheme") && global.controlScheme == "mouse";
 }
 
 function player_input_start_charge()
